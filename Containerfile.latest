@@ -3,16 +3,10 @@ FROM ghcr.io/ublue-os/aurora:latest
 ENV LANG=C.UTF-8
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Add TUXEDO official repo (matches Fedora in image)
+# Add TUXEDO official repo and setup GPG key
 RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
-    cat > /etc/yum.repos.d/tuxedo.repo <<EOF
-[tuxedo]
-name=TUXEDO
-baseurl=https://rpm.tuxedocomputers.com/fedora/\${FEDORA_VER}/x86_64/base
-enabled=1
-gpgcheck=1
-gpgkey=https://rpm.tuxedocomputers.com/fedora/\${FEDORA_VER}/0x54840598.pub.asc
-EOF && \
+    printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
+    "${FEDORA_VER}" "${FEDORA_VER}" > /etc/yum.repos.d/tuxedo.repo && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 
@@ -59,8 +53,8 @@ case "$1" in
     ;;
   *) ;;
 esac
-EOF && \
-    chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+EOF
+RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
 
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
