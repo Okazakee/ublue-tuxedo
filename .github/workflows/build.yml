@@ -13,7 +13,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/aurora-tuxedo
+  IMAGE_NAME: okazakee/aurora-tuxedo
 
 jobs:
   check-aurora-updates:
@@ -42,9 +42,6 @@ jobs:
     needs: check-aurora-updates
     if: needs.check-aurora-updates.outputs.skip_build == 'false'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     strategy:
       matrix:
         variant: [stable, latest, dx]
