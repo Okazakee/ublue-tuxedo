@@ -5,13 +5,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Add TUXEDO official repo (matches Fedora in image)
 RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
-    cat > /etc/yum.repos.d/tuxedo.repo <<'EOF'
+    cat > /etc/yum.repos.d/tuxedo.repo <<EOF
 [tuxedo]
 name=TUXEDO
-baseurl=https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/x86_64/base
+baseurl=https://rpm.tuxedocomputers.com/fedora/\${FEDORA_VER}/x86_64/base
 enabled=1
 gpgcheck=1
-gpgkey=https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc
+gpgkey=https://rpm.tuxedocomputers.com/fedora/\${FEDORA_VER}/0x54840598.pub.asc
 EOF && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
