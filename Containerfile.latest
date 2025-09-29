@@ -54,8 +54,7 @@ case "$1" in
     ;;
   *) ;;
 esac
-EOF
-RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+EOF && chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
 
 # Copy overlay files
 COPY overlay/ /
