@@ -65,3 +65,4 @@ RUN rm -rf /var/cache/dnf/* /var/tmp/*
 LABEL org.opencontainers.image.title="aurora-tuxedo-latest"
 LABEL org.opencontainers.image.description="Aurora Latest with Tuxedo drivers and TCC for InfinityBook laptops"
 LABEL org.opencontainers.image.vendor="Aurora Tuxedo"
+
