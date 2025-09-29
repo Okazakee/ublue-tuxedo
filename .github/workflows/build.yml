@@ -39,6 +39,19 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        variant: [stable, latest, dx]
+        include:
+          - variant: stable
+            containerfile: Containerfile
+            tag: stable
+          - variant: latest
+            containerfile: Containerfile.latest
+            tag: latest
+          - variant: dx
+            containerfile: Containerfile.dx
+            tag: dx
 
     steps:
       - name: Checkout repository
@@ -52,7 +65,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Extract metadata
         id: meta
@@ -60,16 +73,14 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ matrix.tag }},enable={{is_default_branch}}
+            type=raw,value=${{ matrix.tag }}-{{sha}},enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Containerfile
+          file: ./${{ matrix.containerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -78,7 +89,7 @@ jobs:
           platforms: linux/amd64
 
       - name: Update digest file
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.variant == 'stable'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -86,10 +97,13 @@ jobs:
           git diff --staged --quiet || git commit -m "Update Aurora digest"
           git push
 
-  test-image:
+  test-images:
     needs: build-and-push
     if: needs.check-aurora-updates.outputs.skip_build == 'false'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [stable, latest, dx]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -102,17 +116,18 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Test image
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }} \
             bash -c "
+              echo 'Testing ${{ matrix.variant }} variant...'
               echo 'Testing Tuxedo packages...'
               rpm -qa | grep -E '(tuxedo|dkms)' || echo 'No Tuxedo packages found'
               echo 'Testing modules...'
               ls -la /lib/modules/*/updates/ | grep tuxedo || echo 'No Tuxedo modules found'
               echo 'Testing scripts...'
               ls -la /usr/bin/setup-secureboot || echo 'Setup script not found'
-              echo 'Image test completed'
+              echo '${{ matrix.variant }} variant test completed'
             "

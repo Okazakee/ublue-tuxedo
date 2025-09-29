@@ -1,0 +1,68 @@
+FROM ghcr.io/ublue-os/aurora:dx
+ENV LANG=C.UTF-8
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Add TUXEDO official repo (matches Fedora in image)
+RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
+    cat > /etc/yum.repos.d/tuxedo.repo <<'EOF'
+[tuxedo]
+name=TUXEDO
+baseurl=https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/x86_64/base
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc
+EOF && \
+    curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
+    rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
+
+# Install vendor packages + build deps
+RUN dnf -y upgrade --setopt=install_weak_deps=False && \
+    dnf -y install tuxedo-control-center tuxedo-drivers dkms gcc make perl kernel-devel python3-pip || true && \
+    dnf -y clean all
+
+# DKMS / prebuild modules (PR: ensure building in writable tmp)
+RUN set -eux; \
+    mkdir -p /tmp/tuxedo-drivers-build; \
+    # Copy DKMS sources to writable location if they exist
+    if [ -d "/usr/src/tuxedo-drivers" ]; then \
+      cp -r /usr/src/tuxedo-drivers /tmp/tuxedo-drivers-build/; \
+    fi; \
+    # Try DKMS autoinstall first
+    dkms autoinstall || true; \
+    # Manual build in writable location if DKMS sources exist
+    if [ -d "/tmp/tuxedo-drivers-build/tuxedo-drivers" ]; then \
+      cd /tmp/tuxedo-drivers-build/tuxedo-drivers && \
+      make && \
+      make modules_install; \
+    fi; \
+    # Ensure modules installed to updates dir and update dependencies
+    KVER=$(uname -r); \
+    if [ -d "/lib/modules/${KVER}" ]; then \
+      depmod -a || true; \
+    fi
+
+# Ensure modules auto-load on boot
+RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
+
+# Resume hook to re-init keyboard on resume (fixes backlight reinit)
+RUN cat > /usr/lib/systemd/system-sleep/tuxedo-keyboard <<'EOF'
+#!/bin/sh
+case "$1" in
+  post)
+    /sbin/modprobe tuxedo_keyboard >/dev/null 2>&1 || true
+    /sbin/modprobe tuxedo_io >/dev/null 2>&1 || true
+    ;;
+  *) ;;
+esac
+EOF
+RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+
+# Copy overlay files
+COPY overlay/ /
+
+# Cleanup
+RUN rm -rf /var/cache/dnf/* /var/tmp/*
+
+LABEL org.opencontainers.image.title="aurora-tuxedo-dx"
+LABEL org.opencontainers.image.description="Aurora DX with Tuxedo drivers and TCC for InfinityBook laptops"
+LABEL org.opencontainers.image.vendor="Aurora Tuxedo"

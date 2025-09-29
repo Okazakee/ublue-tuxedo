@@ -1,6 +1,12 @@
 # Aurora Tuxedo
 
-Aurora-based OCI image with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
+Aurora-based OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
+
+## Available Variants
+
+- **Stable**: `ghcr.io/okazakee/aurora-tuxedo:stable` - Weekly updates with gated kernel
+- **Latest**: `ghcr.io/okazakee/aurora-tuxedo:latest` - Newest features with latest kernel
+- **DX**: `ghcr.io/okazakee/aurora-tuxedo:dx` - Developer Experience with pre-installed dev tools
 
 ## Features
 
@@ -9,13 +15,30 @@ Aurora-based OCI image with official Tuxedo drivers and TCC (Tuxedo Control Cent
 - **Secure Boot Support**: Aurora key path with MOK enrollment fallback
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
 - **Smart CI**: Skips builds when Aurora base hasn't changed
+- **Multi-Variant Support**: Stable, Latest, and DX variants available
 
 ## Quick Start
 
 ### Rebase to Aurora Tuxedo
 
+Choose your preferred variant:
+
+**Stable (Recommended for most users):**
+
+```bash
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:stable
+```
+
+**Latest (For cutting-edge features):**
+
 ```bash
 sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:latest
+```
+
+**DX (For developers):**
+
+```bash
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:dx
 ```
 
 ### Add Recommended Kernel Arguments
