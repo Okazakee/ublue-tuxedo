@@ -1,0 +1,28 @@
+# Build artifacts
+*.tar
+*.tar.gz
+*.tar.bz2
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local configuration
+.env
+.env.local
+
+# Build cache
+.cache/
+build/
+dist/
