@@ -54,7 +54,8 @@ case "$1" in
     ;;
   *) ;;
 esac
-EOF && chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+EOF
+RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
 
 # Copy overlay files
 COPY overlay/ /
@@ -65,4 +66,3 @@ RUN rm -rf /var/cache/dnf/* /var/tmp/*
 LABEL org.opencontainers.image.title="aurora-tuxedo"
 LABEL org.opencontainers.image.description="Aurora with Tuxedo drivers and TCC for InfinityBook laptops"
 LABEL org.opencontainers.image.vendor="Aurora Tuxedo"
-
