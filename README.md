@@ -15,7 +15,7 @@ Aurora-based OCI image with official Tuxedo drivers and TCC (Tuxedo Control Cent
 ### Rebase to Aurora Tuxedo
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/<your-username>/aurora-tuxedo:latest
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:latest
 ```
 
 ### Add Recommended Kernel Arguments
@@ -146,7 +146,7 @@ sudo rpm-ostree rollback
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/<your-username>/aurora-tuxedo.git
+   git clone https://github.com/okazakee/aurora-tuxedo.git
    cd aurora-tuxedo
    ```
 
@@ -217,7 +217,7 @@ This project follows the same license as the Aurora base image.
 
 - **Tuxedo Support**: [Tuxedo Computers Support](https://www.tuxedocomputers.com/en/Support.1.html)
 - **Aurora Support**: [Aurora Documentation](https://aurora.blue/)
-- **Issues**: [GitHub Issues](https://github.com/<your-username>/aurora-tuxedo/issues)
+- **Issues**: [GitHub Issues](https://github.com/okazakee/aurora-tuxedo/issues)
 
 ## Acknowledgments
 
