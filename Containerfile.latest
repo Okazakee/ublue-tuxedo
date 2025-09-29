@@ -43,18 +43,7 @@ RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d
 COPY overlay/ /
 
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
-RUN mkdir -p /usr/lib/systemd/system-sleep && \
-    cat > /usr/lib/systemd/system-sleep/tuxedo-keyboard <<'EOF'
-#!/bin/sh
-case "$1" in
-  post)
-    /sbin/modprobe tuxedo_keyboard >/dev/null 2>&1 || true
-    /sbin/modprobe tuxedo_io >/dev/null 2>&1 || true
-    ;;
-  *) ;;
-esac
-EOF
-RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+# File is already copied from overlay with correct permissions
 
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
