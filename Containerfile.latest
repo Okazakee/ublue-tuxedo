@@ -59,8 +59,8 @@ case "$1" in
     ;;
   *) ;;
 esac
-EOF
-RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
+EOF && \
+    chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
 
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
