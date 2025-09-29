@@ -25,6 +25,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Install dependencies
         run: |
@@ -60,6 +62,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -107,7 +112,7 @@ jobs:
           git push
 
   test-images:
-    needs: build-and-push
+    needs: [check-aurora-updates, build-and-push]
     if: needs.check-aurora-updates.outputs.skip_build == 'false'
     runs-on: ubuntu-latest
     strategy:
@@ -116,6 +121,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
