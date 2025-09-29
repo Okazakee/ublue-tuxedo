@@ -7,6 +7,10 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: write # Allow pushing commits
+  packages: write # Allow pushing to GHCR
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/aurora-tuxedo
