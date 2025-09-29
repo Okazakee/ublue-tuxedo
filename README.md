@@ -210,12 +210,19 @@ The repository includes GitHub Actions workflows that:
 
 ### Containerfile Structure
 
-1. **Base Image**: `ghcr.io/ublue-os/aurora:stable`
-2. **Repository Setup**: Official Tuxedo Fedora repository
-3. **Package Installation**: TCC, drivers, DKMS, build dependencies
-4. **Module Building**: DKMS autoinstall with proper module placement
-5. **System Integration**: modules-load.d and systemd-sleep hooks
-6. **Overlay Files**: Additional configuration files
+Each variant uses a different base image:
+
+1. **Stable**: `ghcr.io/ublue-os/aurora:stable` - Weekly updates with gated kernel
+2. **Latest**: `ghcr.io/ublue-os/aurora:latest` - Newest features with latest kernel
+3. **DX**: `ghcr.io/ublue-os/aurora-dx:latest` - Developer Experience with pre-installed tools
+
+Common build process for all variants:
+
+1. **Repository Setup**: Official Tuxedo Fedora repository
+2. **Package Installation**: TCC, drivers, DKMS, build dependencies
+3. **Module Building**: DKMS autoinstall with proper module placement
+4. **System Integration**: modules-load.d and systemd-sleep hooks
+5. **Overlay Files**: Additional configuration files
 
 ### Key Components
 
