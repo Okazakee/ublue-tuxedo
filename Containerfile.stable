@@ -45,6 +45,9 @@ RUN set -eux; \
 # Ensure modules auto-load on boot
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
 
+# Copy overlay files
+COPY overlay/ /
+
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
 RUN cat > /usr/lib/systemd/system-sleep/tuxedo-keyboard <<'EOF'
 #!/bin/sh
@@ -57,9 +60,6 @@ case "$1" in
 esac
 EOF
 RUN chmod +x /usr/lib/systemd/system-sleep/tuxedo-keyboard
-
-# Copy overlay files
-COPY overlay/ /
 
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
