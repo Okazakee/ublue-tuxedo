@@ -49,7 +49,8 @@ RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d
 COPY overlay/ /
 
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
-RUN cat > /usr/lib/systemd/system-sleep/tuxedo-keyboard <<'EOF'
+RUN mkdir -p /usr/lib/systemd/system-sleep && \
+    cat > /usr/lib/systemd/system-sleep/tuxedo-keyboard <<'EOF'
 #!/bin/sh
 case "$1" in
   post)
