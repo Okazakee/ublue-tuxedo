@@ -1,0 +1,102 @@
+# syntax=docker/dockerfile:1.4
+FROM ghcr.io/ublue-os/bluefin-dx:stable
+ENV LANG=C.UTF-8
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Add TUXEDO official repo and setup GPG key
+RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
+    printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
+    "${FEDORA_VER}" "${FEDORA_VER}" > /etc/yum.repos.d/tuxedo.repo && \
+    curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
+    rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
+
+# Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
+# Install drivers normally so DKMS builds modules during the build
+RUN dnf -y upgrade --setopt=install_weak_deps=False && \
+    dnf -y install tuxedo-drivers && \
+    dnf -y clean all
+
+# Build DKMS modules for the installed kernel inside the image
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    echo "Building DKMS modules for ${KVER}"; \
+    dkms autoinstall -k "${KVER}" || true; \
+    depmod -a "${KVER}" || true
+
+# Install TCC - rpm-ostree requires /opt to be set up properly
+RUN set -eux; \
+    # Ensure /var/opt exists (ostree persistent location)
+    mkdir -p /var/opt; \
+    # Install TCC
+    dnf -y install tuxedo-control-center && \
+    dnf -y clean all; \
+    # On ostree, /opt should symlink to /var/opt - ensure it exists
+    if [ ! -e /opt ] || [ ! -L /opt ]; then \
+        rm -rf /opt 2>/dev/null || true; \
+        ln -sf /var/opt /opt; \
+        echo "Created /opt -> /var/opt symlink for ostree"; \
+    fi; \
+    # Move TCC from /opt to /var/opt if needed
+    if [ -d /opt/tuxedo-control-center ] && [ ! -L /opt ]; then \
+        mv /opt/tuxedo-control-center /var/opt/ 2>/dev/null || true; \
+    fi; \
+    # Verify installation
+    echo "Checking /opt and /var/opt:"; \
+    ls -la /opt/ 2>/dev/null || echo "/opt not accessible"; \
+    ls -la /var/opt/ 2>/dev/null || echo "/var/opt empty"; \
+    # Find TCC installation
+    TCC_DIR=""; \
+    if [ -d /var/opt/tuxedo-control-center ]; then \
+        TCC_DIR="/var/opt/tuxedo-control-center"; \
+    elif [ -d /opt/tuxedo-control-center ]; then \
+        TCC_DIR="/opt/tuxedo-control-center"; \
+    fi; \
+    if [ -n "${TCC_DIR}" ]; then \
+        echo "TCC installed at: ${TCC_DIR}"; \
+        ls -la "${TCC_DIR}"; \
+        # Create CLI symlink
+        if [ -x "${TCC_DIR}/tuxedo-control-center" ]; then \
+            ln -sf "${TCC_DIR}/tuxedo-control-center" /usr/bin/tuxedo-control-center; \
+            echo "Created /usr/bin/tuxedo-control-center symlink"; \
+        fi; \
+        # Fix desktop file to use correct path
+        if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
+            sed -i "s|/opt/tuxedo-control-center|${TCC_DIR}|g" /usr/share/applications/tuxedo-control-center.desktop; \
+            echo "Updated desktop file paths"; \
+            cat /usr/share/applications/tuxedo-control-center.desktop; \
+        fi; \
+    else \
+        echo "ERROR: TCC installation directory not found"; \
+        exit 1; \
+    fi
+
+# Verify tuxedo-drivers installation
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    echo "Checking modules for kernel: ${KVER}"; \
+    # List installed tuxedo files
+    rpm -ql tuxedo-drivers || echo "tuxedo-drivers package contents not found"; \
+    # Check if modules are in standard location
+    find /lib/modules -name "tuxedo*.ko*" || echo "No tuxedo modules found"; \
+    # Update module dependencies
+    depmod -a ${KVER} || true
+
+# Ensure modules auto-load on boot
+RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
+
+# Copy overlay files
+COPY overlay/ /
+
+# Copy setup script
+COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
+RUN chmod +x /usr/bin/setup-secureboot
+
+# Resume hook to re-init keyboard on resume (fixes backlight reinit)
+# File is already copied from overlay with correct permissions
+
+# Cleanup
+RUN rm -rf /var/cache/dnf/* /var/tmp/*
+
+LABEL org.opencontainers.image.title="bluefin-tuxedo-dx-stable"
+LABEL org.opencontainers.image.description="Bluefin DX Stable with Tuxedo drivers and TCC for InfinityBook laptops"
+LABEL org.opencontainers.image.vendor="Bluefin Tuxedo"

@@ -1,12 +1,28 @@
-# Aurora Tuxedo
+# Universal Blue Tuxedo
 
-Aurora-based OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
+Universal Blue OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
 
-## Available Variants
+Supports **Aurora** (COSMIC), **Bluefin** (GNOME), and **Bazzite** (Gaming) with both stable and latest kernel variants.
 
-- **Stable**: `ghcr.io/okazakee/aurora-tuxedo:stable` - Weekly updates with gated kernel
-- **Latest**: `ghcr.io/okazakee/aurora-tuxedo:latest` - Newest features with latest kernel
-- **DX**: `ghcr.io/okazakee/aurora-tuxedo:dx` - Developer Experience with pre-installed dev tools
+## Available Images
+
+### Aurora Variants (COSMIC Desktop)
+
+- **aurora-tuxedo:stable** - `ghcr.io/okazakee/aurora-tuxedo:stable` - Gated kernel (weekly updates)
+- **aurora-tuxedo:latest** - `ghcr.io/okazakee/aurora-tuxedo:latest` - Newest kernel
+- **aurora-tuxedo-dx:stable** - `ghcr.io/okazakee/aurora-tuxedo-dx:stable` - Dev tools + gated kernel
+- **aurora-tuxedo-dx:latest** - `ghcr.io/okazakee/aurora-tuxedo-dx:latest` - Dev tools + newest kernel
+
+### Bluefin Variants (GNOME Desktop)
+
+- **bluefin-tuxedo:stable** - `ghcr.io/okazakee/bluefin-tuxedo:stable` - Gated kernel (weekly updates)
+- **bluefin-tuxedo:latest** - `ghcr.io/okazakee/bluefin-tuxedo:latest` - Newest kernel
+- **bluefin-tuxedo-dx:stable** - `ghcr.io/okazakee/bluefin-tuxedo-dx:stable` - Dev tools + gated kernel
+- **bluefin-tuxedo-dx:latest** - `ghcr.io/okazakee/bluefin-tuxedo-dx:latest` - Dev tools + newest kernel
+
+### Bazzite Variant (Gaming-Optimized)
+
+- **bazzite-tuxedo:stable** - `ghcr.io/okazakee/bazzite-tuxedo:stable` - Gaming-optimized with gated kernel
 
 ## Features
 
@@ -19,28 +35,55 @@ Aurora-based OCI images with official Tuxedo drivers and TCC (Tuxedo Control Cen
 
 ## Quick Start
 
-### Rebase to Aurora Tuxedo
+### Rebasing to Tuxedo Images
 
-Choose your preferred variant:
+Choose your preferred desktop environment and variant:
 
-**Stable (Recommended for most users):**
+#### Aurora (COSMIC Desktop)
 
 ```bash
+# Stable (Recommended)
 sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:stable
-sudo systemctl reboot
-```
 
-**Latest (For cutting-edge features):**
-
-```bash
+# Latest (Newest features)
 sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:latest
+
+# DX Stable (Dev tools + stable kernel)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo-dx:stable
+
+# DX Latest (Dev tools + newest kernel)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo-dx:latest
+
+# Reboot to apply
 sudo systemctl reboot
 ```
 
-**DX (For developers):**
+#### Bluefin (GNOME Desktop)
 
 ```bash
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:dx
+# Stable (Recommended)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo:stable
+
+# Latest (Newest features)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo:latest
+
+# DX Stable (Dev tools + stable kernel)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo-dx:stable
+
+# DX Latest (Dev tools + newest kernel)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo-dx:latest
+
+# Reboot to apply
+sudo systemctl reboot
+```
+
+#### Bazzite (Gaming-Optimized)
+
+```bash
+# Stable
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-tuxedo:stable
+
+# Reboot to apply
 sudo systemctl reboot
 ```
 

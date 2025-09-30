@@ -16,7 +16,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: okazakee/aurora-tuxedo
 
 jobs:
   check-aurora-updates:
@@ -70,17 +69,74 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [stable, latest, dx]
+        variant:
+          - aurora-stable
+          - aurora-latest
+          - aurora-dx-stable
+          - aurora-dx-latest
+          - bluefin-stable
+          - bluefin-latest
+          - bluefin-dx-stable
+          - bluefin-dx-latest
+          - bazzite-stable
         include:
-          - variant: stable
-            containerfile: Containerfile
+          # Aurora variants
+          - variant: aurora-stable
+            containerfile: Containerfile.aurora
+            base_image: ghcr.io/ublue-os/aurora:stable
             tag: stable
-          - variant: latest
-            containerfile: Containerfile.latest
+            image_name: okazakee/aurora-tuxedo
+            description: "Aurora Stable with Tuxedo drivers and TCC"
+          - variant: aurora-latest
+            containerfile: Containerfile.aurora-latest
+            base_image: ghcr.io/ublue-os/aurora:latest
             tag: latest
-          - variant: dx
-            containerfile: Containerfile.dx
-            tag: dx
+            image_name: okazakee/aurora-tuxedo
+            description: "Aurora Latest with Tuxedo drivers and TCC"
+          - variant: aurora-dx-stable
+            containerfile: Containerfile.aurora-dx-stable
+            base_image: ghcr.io/ublue-os/aurora-dx:stable
+            tag: stable
+            image_name: okazakee/aurora-tuxedo-dx
+            description: "Aurora DX Stable with Tuxedo drivers and TCC"
+          - variant: aurora-dx-latest
+            containerfile: Containerfile.aurora-dx-latest
+            base_image: ghcr.io/ublue-os/aurora-dx:latest
+            tag: latest
+            image_name: okazakee/aurora-tuxedo-dx
+            description: "Aurora DX Latest with Tuxedo drivers and TCC"
+          # Bluefin variants
+          - variant: bluefin-stable
+            containerfile: Containerfile.bluefin
+            base_image: ghcr.io/ublue-os/bluefin:stable
+            tag: stable
+            image_name: okazakee/bluefin-tuxedo
+            description: "Bluefin Stable with Tuxedo drivers and TCC"
+          - variant: bluefin-latest
+            containerfile: Containerfile.bluefin-latest
+            base_image: ghcr.io/ublue-os/bluefin:latest
+            tag: latest
+            image_name: okazakee/bluefin-tuxedo
+            description: "Bluefin Latest with Tuxedo drivers and TCC"
+          - variant: bluefin-dx-stable
+            containerfile: Containerfile.bluefin-dx-stable
+            base_image: ghcr.io/ublue-os/bluefin-dx:stable
+            tag: stable
+            image_name: okazakee/bluefin-tuxedo-dx
+            description: "Bluefin DX Stable with Tuxedo drivers and TCC"
+          - variant: bluefin-dx-latest
+            containerfile: Containerfile.bluefin-dx-latest
+            base_image: ghcr.io/ublue-os/bluefin-dx:latest
+            tag: latest
+            image_name: okazakee/bluefin-tuxedo-dx
+            description: "Bluefin DX Latest with Tuxedo drivers and TCC"
+          # Bazzite variant
+          - variant: bazzite-stable
+            containerfile: Containerfile.bazzite
+            base_image: ghcr.io/ublue-os/bazzite:stable
+            tag: stable
+            image_name: okazakee/bazzite-tuxedo
+            description: "Bazzite Stable with Tuxedo drivers and TCC"
 
     steps:
       - name: Checkout repository
@@ -110,7 +166,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ matrix.image_name }}
 
       - name: Build image and push temp tag (non-PR)
         if: github.event_name != 'pull_request'
@@ -120,7 +176,7 @@ jobs:
           context: .
           file: ./${{ matrix.containerfile }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
+          tags: ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -130,7 +186,7 @@ jobs:
 
       - name: Set test image (non-PR)
         if: github.event_name != 'pull_request'
-        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
+        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
 
       - name: Build image local (PR)
         if: github.event_name == 'pull_request'
@@ -140,7 +196,7 @@ jobs:
           file: ./${{ matrix.containerfile }}
           push: false
           load: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
+          tags: ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -150,7 +206,7 @@ jobs:
 
       - name: Set test image (PR)
         if: github.event_name == 'pull_request'
-        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" >> $GITHUB_ENV
+        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}" >> $GITHUB_ENV
 
       - name: Test built image
         shell: bash
@@ -188,9 +244,9 @@ jobs:
         if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
         run: |
           docker buildx imagetools create \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }} \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
+            -t ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }} \
+            -t ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-${{ env.SHORT_SHA }} \
+            ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
 
       - name: Sign container images
         if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
@@ -200,6 +256,6 @@ jobs:
         if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
         run: |
           cosign sign --yes --recursive \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
+            ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}
           cosign sign --yes --recursive \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }}
+            ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-${{ env.SHORT_SHA }}
