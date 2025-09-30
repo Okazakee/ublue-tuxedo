@@ -93,14 +93,13 @@ RUN set -eux; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi
 
-# Create CLI wrapper using tee (FOSS best practice for Dockerfiles)
-RUN tee /usr/bin/tuxedo-control-center > /dev/null <<'EOF'
+# Create CLI wrapper (using install for atomic creation with permissions)
+RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
 exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
 
-RUN chmod +x /usr/bin/tuxedo-control-center && \
-    echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
+RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 
 # Verify tuxedo-drivers installation
 RUN set -eux; \
