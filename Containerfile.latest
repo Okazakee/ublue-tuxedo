@@ -23,20 +23,40 @@ RUN set -eux; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
 
-# Pre-create target dir to avoid RPM cpio errors, then install TCC
-RUN if [ -L /opt ]; then \
-        mkdir -p "$(readlink -f /opt)/tuxedo-control-center"; \
+# Install TCC - on ostree systems /opt needs special handling
+RUN set -eux; \
+    # Check /opt status before install
+    if [ -L /opt ]; then \
+        echo "/opt is a symlink to: $(readlink -f /opt)"; \
+        TARGET_DIR="$(readlink -f /opt)/tuxedo-control-center"; \
     else \
-        mkdir -p /opt/tuxedo-control-center; \
-    fi && \
+        echo "/opt is a directory"; \
+        TARGET_DIR="/opt/tuxedo-control-center"; \
+    fi; \
+    mkdir -p "${TARGET_DIR}"; \
     dnf -y install tuxedo-control-center && \
-    dnf -y clean all
-
-# Create TCC CLI shim (binary usually resides under /opt)
-RUN if [ -x /opt/tuxedo-control-center/tuxedo-control-center ]; then \
-      ln -sf /opt/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+    dnf -y clean all; \
+    # Verify installation
+    echo "Contents of /opt after install:"; \
+    ls -la /opt/ || true; \
+    echo "Searching for TCC binary:"; \
+    find /opt /usr/share -name "tuxedo-control-center" -type f -executable 2>/dev/null || echo "TCC binary not found"; \
+    # Create symlink to /usr/bin for CLI access
+    if [ -x /opt/tuxedo-control-center/tuxedo-control-center ]; then \
+        ln -sf /opt/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+        echo "Created symlink from /opt/tuxedo-control-center/tuxedo-control-center"; \
     elif [ -x /usr/share/tuxedo-control-center/tuxedo-control-center ]; then \
-      ln -sf /usr/share/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+        ln -sf /usr/share/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+        echo "Created symlink from /usr/share/tuxedo-control-center/tuxedo-control-center"; \
+    else \
+        echo "WARNING: TCC binary not found in expected locations"; \
+    fi; \
+    # Verify desktop file
+    if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
+        echo "Desktop file found"; \
+        cat /usr/share/applications/tuxedo-control-center.desktop; \
+    else \
+        echo "WARNING: Desktop file not found"; \
     fi
 
 # Verify tuxedo-drivers installation

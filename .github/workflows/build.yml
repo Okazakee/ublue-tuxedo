@@ -154,8 +154,10 @@ jobs:
       - name: Test built image
         shell: bash
         run: |
-          docker run --rm "$TEST_IMAGE" bash -e -o pipefail - <<'EOF'
-          echo "=== Testing variant ==="
+          echo "Testing image: $TEST_IMAGE"
+          docker run --rm -i "$TEST_IMAGE" bash -e -o pipefail <<'EOF'
+          set -x
+          echo "=== Testing ${{ matrix.variant }} variant ==="
           echo "Checking TCC package..."
           rpm -q tuxedo-control-center || { echo "ERROR: TCC package not installed"; exit 1; }
           echo "Checking tuxedo-drivers package..."
