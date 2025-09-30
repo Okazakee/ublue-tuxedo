@@ -2,27 +2,23 @@
 FROM ghcr.io/ublue-os/bazzite-deck:stable
 ENV LANG=C.UTF-8
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
- \
 # Add TUXEDO official repo and setup GPG key
 RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
     "${FEDORA_VER}" "${FEDORA_VER}" > /etc/yum.repos.d/tuxedo.repo && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
- \
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
 # Install drivers normally so DKMS builds modules during the build
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
     dnf -y install tuxedo-drivers && \
     dnf -y clean all
- \
 # Build DKMS modules for the installed kernel inside the image
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
     echo "Building DKMS modules for ${KVER}"; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
- \
 # Install TCC - move to /usr/lib for ostree compatibility
 RUN set -eux; \
     # Pre-create /opt as regular directory (Aurora might have it as symlink) \
@@ -88,9 +84,7 @@ RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 # Launch TCC - pass all arguments through
 exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
- \
 RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
- \
 # Verify tuxedo-drivers installation
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
@@ -101,24 +95,16 @@ RUN set -eux; \
     find /lib/modules -name "tuxedo*.ko*" || echo "No tuxedo modules found"; \
     # Update module dependencies
     depmod -a ${KVER} || true
- \
 # Ensure modules auto-load on boot
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
- \
 # Copy overlay files
 COPY overlay/ /
- \
 # Copy setup script
 COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
 RUN chmod +x /usr/bin/setup-secureboot
- \
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
 # File is already copied from overlay with correct permissions
- \
-# Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
- \
 LABEL org.opencontainers.image.title="bazzite-deck-tuxedo"
 LABEL org.opencontainers.image.description="Bazzite Deck Stable with Tuxedo drivers and TCC for InfinityBook laptops"
 LABEL org.opencontainers.image.vendor="Bazzite Tuxedo"
- \
