@@ -1,4 +1,4 @@
-name: Build and Push Aurora Tuxedo
+name: Build and Push Universal Blue Tuxedo
 
 on:
   push:
@@ -18,10 +18,11 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  check-aurora-updates:
+  check-base-images:
     runs-on: ubuntu-latest
     outputs:
-      skip_build: ${{ steps.check.outputs.skip_build }}
+      variants_to_build: ${{ steps.check.outputs.variants_to_build }}
+      skip_all: ${{ steps.check.outputs.skip_all }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,55 +31,39 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
-      - name: Check if scheduled run
-        id: is_scheduled
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "scheduled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "scheduled=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install dependencies
-        if: steps.is_scheduled.outputs.scheduled == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y skopeo jq
 
-      - name: Check Aurora digest
+      - name: Check base image digests and determine variants to build
         id: check
         run: |
-          if [ "${{ steps.is_scheduled.outputs.scheduled }}" = "true" ]; then
-            ./scripts/check-aurora-digest.sh
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Scheduled run - check which base images changed
+            ./scripts/check-base-images.sh
           else
-            echo "skip_build=false" >> "$GITHUB_OUTPUT"
+            # Manual trigger or PR - build all variants
+            echo "variants_to_build=[\"aurora-stable\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"bluefin-stable\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bazzite-stable\"]" >> "$GITHUB_OUTPUT"
+            echo "skip_all=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Commit digest file
-        if: steps.is_scheduled.outputs.scheduled == 'true' && steps.check.outputs.skip_build == 'false' && github.event_name != 'pull_request'
+        if: github.event_name == 'schedule' && steps.check.outputs.skip_all == 'false' && github.event_name != 'pull_request'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add .aurora-digest
-          git diff --staged --quiet || git commit -m "Update Aurora digest [skip ci]"
+          git add .base-image-digests
+          git diff --staged --quiet || git commit -m "Update base image digests [skip ci]"
           git push
 
   build-and-test:
-    needs: check-aurora-updates
-    if: needs.check-aurora-updates.outputs.skip_build == 'false'
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all == 'false'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant:
-          - aurora-stable
-          - aurora-latest
-          - aurora-dx-stable
-          - aurora-dx-latest
-          - bluefin-stable
-          - bluefin-latest
-          - bluefin-dx-stable
-          - bluefin-dx-latest
-          - bazzite-stable
+        variant: ${{ fromJson(needs.check-base-images.outputs.variants_to_build) }}
         include:
           # Aurora variants
           - variant: aurora-stable

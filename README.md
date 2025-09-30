@@ -30,8 +30,8 @@ Supports **Aurora** (KDE Plasma), **Bluefin** (GNOME), and **Bazzite** (Gaming) 
 - **Pre-built Kernel Modules**: DKMS modules built and installed during image creation
 - **Secure Boot Support**: Aurora key path with MOK enrollment fallback
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
-- **Smart CI**: Skips builds when Aurora base hasn't changed, only publishes after tests pass
-- **Multi-Variant Support**: Stable, Latest, and DX variants available
+- **Smart CI**: Checks all base images (Aurora, Bluefin, Bazzite) and only builds when updates are available
+- **Multi-Variant Support**: Aurora, Bluefin, and Bazzite with stable/latest variants
 
 ## Quick Start
 
