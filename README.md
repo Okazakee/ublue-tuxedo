@@ -2,11 +2,11 @@
 
 Universal Blue OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
 
-Supports **Aurora** (COSMIC), **Bluefin** (GNOME), and **Bazzite** (Gaming) with both stable and latest kernel variants.
+Supports **Aurora** (KDE Plasma), **Bluefin** (GNOME), and **Bazzite** (Gaming) with both stable and latest kernel variants.
 
 ## Available Images
 
-### Aurora Variants (COSMIC Desktop)
+### Aurora Variants (KDE Plasma Desktop)
 
 - **aurora-tuxedo:stable** - `ghcr.io/okazakee/aurora-tuxedo:stable` - Gated kernel (weekly updates)
 - **aurora-tuxedo:latest** - `ghcr.io/okazakee/aurora-tuxedo:latest` - Newest kernel
@@ -39,7 +39,7 @@ Supports **Aurora** (COSMIC), **Bluefin** (GNOME), and **Bazzite** (Gaming) with
 
 Choose your preferred desktop environment and variant:
 
-#### Aurora (COSMIC Desktop)
+#### Aurora (KDE Plasma Desktop)
 
 ```bash
 # Stable (Recommended)
