@@ -63,7 +63,7 @@ jobs:
           git diff --staged --quiet || git commit -m "Update Aurora digest [skip ci]"
           git push
 
-  build-and-push:
+  build-and-test:
     needs: check-aurora-updates
     if: needs.check-aurora-updates.outputs.skip_build == 'false'
     runs-on: ubuntu-latest
@@ -81,6 +81,91 @@ jobs:
             containerfile: Containerfile.dx
             tag: dx
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ matrix.tag }},enable={{is_default_branch}}
+            type=raw,value=${{ matrix.tag }}-{{sha}},enable={{is_default_branch}}
+
+      - name: Build image (no push, load locally)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ matrix.containerfile }}
+          push: false
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Test built image (local)
+        run: |
+          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }} \
+            bash -c "
+              set -e
+              echo '=== Testing ${{ matrix.variant }} variant ==='
+              echo 'Checking TCC package...'
+              rpm -q tuxedo-control-center || { echo 'ERROR: TCC package not installed'; exit 1; }
+              echo 'Checking tuxedo-drivers package...'
+              rpm -q tuxedo-drivers || { echo 'ERROR: tuxedo-drivers package not installed'; exit 1; }
+              echo 'Checking kernel modules...'
+              KVER=\$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)
+              echo "Kernel version: \${KVER}"
+              MODULE_COUNT=\$(find /lib/modules/\${KVER} -name 'tuxedo*.ko*' | wc -l)
+              if [ "\${MODULE_COUNT}" -eq 0 ]; then
+                echo 'ERROR: No tuxedo kernel modules found'
+                echo 'Searching all kernel versions:'
+                find /lib/modules -name 'tuxedo*.ko*' || echo 'No modules found anywhere'
+                exit 1
+              fi
+              echo "Found \${MODULE_COUNT} tuxedo module(s)"
+              find /lib/modules/\${KVER} -name 'tuxedo*.ko*'
+              echo 'Checking setup script...'
+              [ -f /usr/bin/setup-secureboot ] && [ -x /usr/bin/setup-secureboot ] || { echo 'ERROR: setup-secureboot missing or not executable'; exit 1; }
+              echo 'Checking systemd-sleep hook...'
+              [ -x /usr/lib/systemd/system-sleep/tuxedo-keyboard ] || { echo 'ERROR: systemd-sleep hook missing or not executable'; exit 1; }
+              echo 'Checking modules-load.d config...'
+              [ -f /etc/modules-load.d/tuxedo.conf ] && grep -q tuxedo_keyboard /etc/modules-load.d/tuxedo.conf || { echo 'ERROR: modules-load.d config missing'; exit 1; }
+              echo '=== All tests passed ==='
+            "
+
+  push-images:
+    needs: [check-aurora-updates, build-and-test]
+    if: needs.check-aurora-updates.outputs.skip_build == 'false' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        variant: [stable, latest, dx]
+        include:
+          - variant: stable
+            containerfile: Containerfile
+            tag: stable
+          - variant: latest
+            containerfile: Containerfile.latest
+            tag: latest
+          - variant: dx
+            containerfile: Containerfile.dx
+            tag: dx
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -123,87 +208,3 @@ jobs:
           platforms: linux/amd64
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-
-  test-images:
-    needs: [check-aurora-updates, build-and-push]
-    if: needs.check-aurora-updates.outputs.skip_build == 'false'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        variant: [stable, latest, dx]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      - name: Test image
-        run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }} \
-            bash -c "
-              set -e
-              echo '=== Testing ${{ matrix.variant }} variant ==='
-              
-              echo 'Checking TCC package...'
-              rpm -q tuxedo-control-center || { echo 'ERROR: TCC package not installed'; exit 1; }
-              
-              echo 'Checking tuxedo-drivers package...'
-              rpm -q tuxedo-drivers || { echo 'ERROR: tuxedo-drivers package not installed'; exit 1; }
-              
-              echo 'Checking kernel modules...'
-              KVER=\$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)
-              echo \"Kernel version: \${KVER}\"
-              
-              MODULE_COUNT=\$(find /lib/modules/\${KVER} -name 'tuxedo*.ko*' | wc -l)
-              if [ \"\${MODULE_COUNT}\" -eq 0 ]; then
-                echo 'ERROR: No tuxedo kernel modules found'
-                echo 'Searching all kernel versions:'
-                find /lib/modules -name 'tuxedo*.ko*' || echo 'No modules found anywhere'
-                exit 1
-              fi
-              echo \"Found \${MODULE_COUNT} tuxedo module(s)\"
-              find /lib/modules/\${KVER} -name 'tuxedo*.ko*'
-              
-              echo 'Checking setup script...'
-              if [ ! -f /usr/bin/setup-secureboot ]; then
-                echo 'ERROR: setup-secureboot script not found'
-                exit 1
-              fi
-              if [ ! -x /usr/bin/setup-secureboot ]; then
-                echo 'ERROR: setup-secureboot script not executable'
-                exit 1
-              fi
-              
-              echo 'Checking systemd-sleep hook...'
-              if [ ! -f /usr/lib/systemd/system-sleep/tuxedo-keyboard ]; then
-                echo 'ERROR: systemd-sleep hook not found'
-                exit 1
-              fi
-              if [ ! -x /usr/lib/systemd/system-sleep/tuxedo-keyboard ]; then
-                echo 'ERROR: systemd-sleep hook not executable'
-                exit 1
-              fi
-              
-              echo 'Checking modules-load.d config...'
-              if [ ! -f /etc/modules-load.d/tuxedo.conf ]; then
-                echo 'ERROR: modules-load.d config not found'
-                exit 1
-              fi
-              grep -q 'tuxedo_keyboard' /etc/modules-load.d/tuxedo.conf || { echo 'ERROR: tuxedo_keyboard not in modules-load.d'; exit 1; }
-              
-              echo '=== All tests passed for ${{ matrix.variant }} ==='
-            "

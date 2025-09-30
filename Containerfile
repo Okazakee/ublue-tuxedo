@@ -32,6 +32,13 @@ RUN if [ -L /opt ]; then \
     dnf -y install tuxedo-control-center && \
     dnf -y clean all
 
+# Create TCC CLI shim (binary usually resides under /opt)
+RUN if [ -x /opt/tuxedo-control-center/tuxedo-control-center ]; then \
+      ln -sf /opt/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+    elif [ -x /usr/share/tuxedo-control-center/tuxedo-control-center ]; then \
+      ln -sf /usr/share/tuxedo-control-center/tuxedo-control-center /usr/bin/tuxedo-control-center; \
+    fi
+
 # Verify tuxedo-drivers installation
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
