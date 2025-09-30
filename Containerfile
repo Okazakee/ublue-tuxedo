@@ -11,9 +11,13 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
-# Install drivers first with noscripts to skip DKMS, then TCC normally
+# Install drivers first with noscripts to skip DKMS
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
     dnf -y install --setopt=tsflags=noscripts tuxedo-drivers && \
+    dnf -y clean all
+
+# Pre-create /opt as directory to avoid RPM cpio errors, then install TCC
+RUN mkdir -p /opt && \
     dnf -y install tuxedo-control-center && \
     dnf -y clean all
 
