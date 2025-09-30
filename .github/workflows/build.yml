@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write # Allow pushing commits
   packages: write # Allow pushing to GHCR
+  id-token: write # Required for cosign keyless signing
 
 env:
   REGISTRY: ghcr.io
@@ -190,3 +191,15 @@ jobs:
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }} \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }} \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
+
+      - name: Sign container images
+        if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Sign promoted images with cosign
+        if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
+        run: |
+          cosign sign --yes --recursive \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
+          cosign sign --yes --recursive \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }}

@@ -14,7 +14,7 @@ Aurora-based OCI images with official Tuxedo drivers and TCC (Tuxedo Control Cen
 - **Pre-built Kernel Modules**: DKMS modules built and installed during image creation
 - **Secure Boot Support**: Aurora key path with MOK enrollment fallback
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
-- **Smart CI**: Skips builds when Aurora base hasn't changed
+- **Smart CI**: Skips builds when Aurora base hasn't changed, only publishes after tests pass
 - **Multi-Variant Support**: Stable, Latest, and DX variants available
 
 ## Quick Start
@@ -26,19 +26,22 @@ Choose your preferred variant:
 **Stable (Recommended for most users):**
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:stable
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:stable
+sudo systemctl reboot
 ```
 
 **Latest (For cutting-edge features):**
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:latest
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:latest
+sudo systemctl reboot
 ```
 
 **DX (For developers):**
 
 ```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/okazakee/aurora-tuxedo:dx
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:dx
+sudo systemctl reboot
 ```
 
 ### Add Recommended Kernel Arguments
