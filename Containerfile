@@ -16,8 +16,12 @@ RUN dnf -y upgrade --setopt=install_weak_deps=False && \
     dnf -y install --setopt=tsflags=noscripts tuxedo-drivers && \
     dnf -y clean all
 
-# Pre-create /opt as directory to avoid RPM cpio errors, then install TCC
-RUN mkdir -p /opt && \
+# Pre-create target dir to avoid RPM cpio errors, then install TCC
+RUN if [ -L /opt ]; then \
+        mkdir -p "$(readlink -f /opt)/tuxedo-control-center"; \
+    else \
+        mkdir -p /opt/tuxedo-control-center; \
+    fi && \
     dnf -y install tuxedo-control-center && \
     dnf -y clean all
 
