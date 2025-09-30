@@ -67,9 +67,11 @@ RUN set -eux; \
         echo "Updated desktop file"; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
-    # Create CLI wrapper
-    echo '#!/bin/bash' > /usr/bin/tuxedo-control-center; \
-    echo 'exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"' >> /usr/bin/tuxedo-control-center; \
+    # Create CLI wrapper using tee (FOSS best practice for Dockerfiles)
+    tee /usr/bin/tuxedo-control-center > /dev/null << 'EOF'
+#!/bin/bash
+exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
+EOF
     chmod +x /usr/bin/tuxedo-control-center; \
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 
