@@ -77,6 +77,7 @@ RUN set -eux; \
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center with tccd service enabled"
 
 # Create CLI wrapper for consistent launch behavior
+RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
 # Launch TCC - pass all arguments through
 exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
