@@ -94,6 +94,14 @@ jobs:
           driver-opts: |
             image=moby/buildkit:latest
 
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -103,14 +111,15 @@ jobs:
             type=raw,value=${{ matrix.tag }},enable={{is_default_branch}}
             type=raw,value=${{ matrix.tag }}-{{sha}},enable={{is_default_branch}}
 
-      - name: Build image (no push, load locally)
+      - name: Build image and push temp tag (non-PR)
+        if: github.event_name != 'pull_request'
+        id: build_push_temp
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./${{ matrix.containerfile }}
-          push: false
-          load: true
-          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -118,9 +127,33 @@ jobs:
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      - name: Test built image (local)
+      - name: Set test image (non-PR)
+        if: github.event_name != 'pull_request'
+        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Build image local (PR)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ matrix.containerfile }}
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Set test image (PR)
+        if: github.event_name == 'pull_request'
+        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" >> $GITHUB_ENV
+
+      - name: Test built image
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }} \
+          docker run --rm $TEST_IMAGE \
             bash -c "
               set -e
               echo '=== Testing ${{ matrix.variant }} variant ==='
@@ -148,6 +181,14 @@ jobs:
               [ -f /etc/modules-load.d/tuxedo.conf ] && grep -q tuxedo_keyboard /etc/modules-load.d/tuxedo.conf || { echo 'ERROR: modules-load.d config missing'; exit 1; }
               echo '=== All tests passed ==='
             "
+
+      - name: Promote image tags (non-PR)
+        if: github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ github.sha }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}
 
   push-images:
     needs: [check-aurora-updates, build-and-test]
