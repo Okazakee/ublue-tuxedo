@@ -50,17 +50,38 @@ RUN set -eux; \
 
 # Install TCC - move to /usr/lib for ostree compatibility
 RUN set -eux; \
-    # Install TCC to temporary location
-    dnf -y install tuxedo-control-center && \
-    dnf -y clean all; \
-    # Move from /opt to /usr/lib (ostree-compatible location)
-    if [ -d /opt/tuxedo-control-center ]; then \
-        mkdir -p /usr/lib/tuxedo-control-center; \
-        cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
-        rm -rf /opt/tuxedo-control-center; \
-        echo "Moved TCC to /usr/lib/tuxedo-control-center"; \
+    # Pre-create /opt as regular directory (Aurora might have it as symlink)
+    if [ -L /opt ]; then \
+        echo "/opt is a symlink, removing it"; \
+        rm /opt; \
+        mkdir -p /opt; \
+    elif [ ! -d /opt ]; then \
+        mkdir -p /opt; \
     fi; \
-    # Create symlink from /opt back to /usr/lib for compatibility
+    # Install TCC to temporary location (check logs if it fails)
+    echo "Installing tuxedo-control-center..."; \
+    dnf -y install tuxedo-control-center || { \
+        echo "ERROR: Failed to install tuxedo-control-center"; \
+        echo "Checking repository:"; \
+        dnf repolist -v | grep -i tuxedo || true; \
+        echo "Checking if package exists:"; \
+        dnf list tuxedo-control-center || true; \
+        exit 1; \
+    }; \
+    dnf -y clean all; \
+    # Verify TCC was installed
+    if [ ! -d /opt/tuxedo-control-center ]; then \
+        echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
+        ls -la /opt/ || true; \
+        rpm -ql tuxedo-control-center || true; \
+        exit 1; \
+    fi; \
+    # Move from /opt to /usr/lib (ostree-compatible location)
+    mkdir -p /usr/lib/tuxedo-control-center; \
+    cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
+    rm -rf /opt/tuxedo-control-center; \
+    echo "Moved TCC to /usr/lib/tuxedo-control-center"; \
+    # Create symlink from /var/opt back to /usr/lib for compatibility
     mkdir -p /var/opt; \
     ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
     # Verify
@@ -72,8 +93,8 @@ RUN set -eux; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
     # Create CLI wrapper
-    printf '#!/bin/bash\nexec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"\n' > /usr/bin/tuxedo-control-center && \
-    chmod +x /usr/bin/tuxedo-control-center && \
+    printf '#!/bin/bash\nexec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"\n' > /usr/bin/tuxedo-control-center; \
+    chmod +x /usr/bin/tuxedo-control-center; \
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 
 # Verify tuxedo-drivers installation
