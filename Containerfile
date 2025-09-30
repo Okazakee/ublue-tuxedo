@@ -42,6 +42,10 @@ RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d
 # Copy overlay files
 COPY overlay/ /
 
+# Copy setup script
+COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
+RUN chmod +x /usr/bin/setup-secureboot
+
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
 # File is already copied from overlay with correct permissions
 
