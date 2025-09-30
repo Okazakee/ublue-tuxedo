@@ -13,7 +13,6 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
 # Use --noscripts to skip DKMS post-install (modules pre-built in package)
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
-    mkdir -p /opt && \
     dnf -y install --setopt=tsflags=noscripts tuxedo-control-center && \
     dnf -y clean all
 
