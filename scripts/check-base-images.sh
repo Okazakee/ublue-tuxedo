@@ -10,11 +10,38 @@ BASE_IMAGES=(
     "ghcr.io/ublue-os/aurora:latest"
     "ghcr.io/ublue-os/aurora-dx:stable"
     "ghcr.io/ublue-os/aurora-dx:latest"
+    "ghcr.io/ublue-os/aurora-nvidia:stable"
+    "ghcr.io/ublue-os/aurora-nvidia:latest"
+    "ghcr.io/ublue-os/aurora-dx-nvidia:stable"
+    "ghcr.io/ublue-os/aurora-dx-nvidia:latest"
     "ghcr.io/ublue-os/bluefin:stable"
     "ghcr.io/ublue-os/bluefin:latest"
     "ghcr.io/ublue-os/bluefin-dx:stable"
     "ghcr.io/ublue-os/bluefin-dx:latest"
+    "ghcr.io/ublue-os/bluefin-nvidia:stable"
+    "ghcr.io/ublue-os/bluefin-nvidia:latest"
+    "ghcr.io/ublue-os/bluefin-dx-nvidia:stable"
+    "ghcr.io/ublue-os/bluefin-dx-nvidia:latest"
     "ghcr.io/ublue-os/bazzite:stable"
+    "ghcr.io/ublue-os/bazzite:latest"
+    "ghcr.io/ublue-os/bazzite-nvidia:stable"
+    "ghcr.io/ublue-os/bazzite-nvidia:latest"
+    "ghcr.io/ublue-os/bazzite-deck:stable"
+    "ghcr.io/ublue-os/bazzite-deck:latest"
+    "ghcr.io/ublue-os/bazzite-nvidia-open:stable"
+    "ghcr.io/ublue-os/bazzite-nvidia-open:latest"
+    "ghcr.io/ublue-os/bazzite-deck-nvidia:stable"
+    "ghcr.io/ublue-os/bazzite-deck-nvidia:latest"
+    "ghcr.io/ublue-os/bazzite-gnome:stable"
+    "ghcr.io/ublue-os/bazzite-gnome:latest"
+    "ghcr.io/ublue-os/bazzite-gnome-nvidia:stable"
+    "ghcr.io/ublue-os/bazzite-gnome-nvidia:latest"
+    "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable"
+    "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest"
+    "ghcr.io/ublue-os/bazzite-deck-gnome:stable"
+    "ghcr.io/ublue-os/bazzite-deck-gnome:latest"
+    "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable"
+    "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest"
 )
 
 DIGEST_FILE=".base-image-digests"
@@ -82,6 +109,18 @@ map_image_to_variants() {
         "ghcr.io/ublue-os/aurora-dx:latest")
             echo "aurora-dx-latest"
             ;;
+        "ghcr.io/ublue-os/aurora-nvidia:stable")
+            echo "aurora-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/aurora-nvidia:latest")
+            echo "aurora-nvidia-latest"
+            ;;
+        "ghcr.io/ublue-os/aurora-dx-nvidia:stable")
+            echo "aurora-dx-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/aurora-dx-nvidia:latest")
+            echo "aurora-dx-nvidia-latest"
+            ;;
         "ghcr.io/ublue-os/bluefin:stable")
             echo "bluefin-stable"
             ;;
@@ -94,8 +133,77 @@ map_image_to_variants() {
         "ghcr.io/ublue-os/bluefin-dx:latest")
             echo "bluefin-dx-latest"
             ;;
+        "ghcr.io/ublue-os/bluefin-nvidia:stable")
+            echo "bluefin-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/bluefin-nvidia:latest")
+            echo "bluefin-nvidia-latest"
+            ;;
+        "ghcr.io/ublue-os/bluefin-dx-nvidia:stable")
+            echo "bluefin-dx-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/bluefin-dx-nvidia:latest")
+            echo "bluefin-dx-nvidia-latest"
+            ;;
         "ghcr.io/ublue-os/bazzite:stable")
             echo "bazzite-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite:latest")
+            echo "bazzite-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-nvidia:stable")
+            echo "bazzite-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-nvidia:latest")
+            echo "bazzite-nvidia-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck:stable")
+            echo "bazzite-deck-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck:latest")
+            echo "bazzite-deck-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-nvidia-open:stable")
+            echo "bazzite-nvidia-open-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-nvidia-open:latest")
+            echo "bazzite-nvidia-open-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-nvidia:stable")
+            echo "bazzite-deck-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-nvidia:latest")
+            echo "bazzite-deck-nvidia-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome:stable")
+            echo "bazzite-gnome-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome:latest")
+            echo "bazzite-gnome-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome-nvidia:stable")
+            echo "bazzite-gnome-nvidia-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome-nvidia:latest")
+            echo "bazzite-gnome-nvidia-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable")
+            echo "bazzite-gnome-nvidia-open-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest")
+            echo "bazzite-gnome-nvidia-open-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-gnome:stable")
+            echo "bazzite-deck-gnome-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-gnome:latest")
+            echo "bazzite-deck-gnome-latest"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable")
+            echo "bazzite-deck-nvidia-gnome-stable"
+            ;;
+        "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest")
+            echo "bazzite-deck-nvidia-gnome-latest"
             ;;
     esac
 }

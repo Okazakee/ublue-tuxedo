@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM ghcr.io/ublue-os/bluefin-dx:latest
+FROM ghcr.io/ublue-os/bazzite-nvidia:stable
 ENV LANG=C.UTF-8
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -60,6 +60,24 @@ RUN set -eux; \
     # Services are enabled by default during install, keep them enabled
     systemctl enable tccd.service 2>/dev/null || true; \
     systemctl enable tccd-sleep.service 2>/dev/null || true; \
+    # Verify service files exist and show their contents
+    echo "=== Checking tccd service files ===";
+    ls -la /etc/systemd/system/tccd*.service || echo "No service files found in /etc/systemd/system";
+    for svc in /etc/systemd/system/tccd*.service; do
+        if [ -f "$svc" ]; then
+            echo "--- Content of $svc ---";
+            cat "$svc";
+        fi;
+    done;
+    # Also check if services are in /usr/lib/systemd/system
+    ls -la /usr/lib/systemd/system/tccd*.service 2>/dev/null || echo "No service files in /usr/lib/systemd/system";
+    # Verify the tccd binary exists and is executable
+    echo "=== Checking tccd binary ===";
+    ls -la /usr/lib/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd || echo "tccd binary not found";
+    # Check symlinks
+    echo "=== Checking symlinks ===";
+    ls -la /opt/tuxedo-control-center || echo "/opt symlink missing";
+    ls -la /var/opt/tuxedo-control-center || echo "/var/opt symlink missing";
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center with tccd service enabled"
 
 # Create CLI wrapper for consistent launch behavior
@@ -98,6 +116,7 @@ RUN chmod +x /usr/bin/setup-secureboot
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
 
-LABEL org.opencontainers.image.title="bluefin-tuxedo-dx-latest"
-LABEL org.opencontainers.image.description="Bluefin DX Latest with Tuxedo drivers and TCC for InfinityBook laptops"
-LABEL org.opencontainers.image.vendor="Bluefin Tuxedo"
+LABEL org.opencontainers.image.title="bazzite-nvidia-tuxedo"
+LABEL org.opencontainers.image.description="Bazzite NVIDIA Stable with Tuxedo drivers and TCC for InfinityBook laptops"
+LABEL org.opencontainers.image.vendor="Bazzite Tuxedo"
+

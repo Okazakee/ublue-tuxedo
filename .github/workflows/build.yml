@@ -44,7 +44,7 @@ jobs:
             ./scripts/check-base-images.sh
           else
             # Manual trigger or PR - build all variants
-            echo "variants_to_build=[\"aurora-stable\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"bluefin-stable\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bazzite-stable\"]" >> "$GITHUB_OUTPUT"
+            echo "variants_to_build=[\"aurora-stable\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"aurora-nvidia-stable\",\"aurora-nvidia-latest\",\"aurora-dx-nvidia-stable\",\"aurora-dx-nvidia-latest\",\"bluefin-stable\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bluefin-nvidia-stable\",\"bluefin-nvidia-latest\",\"bluefin-dx-nvidia-stable\",\"bluefin-dx-nvidia-latest\",\"bazzite-stable\",\"bazzite-latest\",\"bazzite-nvidia-stable\",\"bazzite-nvidia-latest\",\"bazzite-nvidia-open-stable\",\"bazzite-nvidia-open-latest\",\"bazzite-deck-stable\",\"bazzite-deck-latest\",\"bazzite-deck-nvidia-stable\",\"bazzite-deck-nvidia-latest\",\"bazzite-gnome-stable\",\"bazzite-gnome-latest\",\"bazzite-gnome-nvidia-stable\",\"bazzite-gnome-nvidia-latest\",\"bazzite-gnome-nvidia-open-stable\",\"bazzite-gnome-nvidia-open-latest\",\"bazzite-deck-gnome-stable\",\"bazzite-deck-gnome-latest\",\"bazzite-deck-nvidia-gnome-stable\",\"bazzite-deck-nvidia-gnome-latest\"]" >> "$GITHUB_OUTPUT"
             echo "skip_all=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -67,61 +67,224 @@ jobs:
         include:
           # Aurora variants
           - variant: aurora-stable
-            containerfile: Containerfile.aurora
+            containerfile: containerfiles/Containerfile.aurora
             base_image: ghcr.io/ublue-os/aurora:stable
             tag: stable
             image_name: okazakee/aurora-tuxedo
             description: "Aurora Stable with Tuxedo drivers and TCC"
           - variant: aurora-latest
-            containerfile: Containerfile.aurora-latest
+            containerfile: containerfiles/Containerfile.aurora-latest
             base_image: ghcr.io/ublue-os/aurora:latest
             tag: latest
             image_name: okazakee/aurora-tuxedo
             description: "Aurora Latest with Tuxedo drivers and TCC"
           - variant: aurora-dx-stable
-            containerfile: Containerfile.aurora-dx-stable
+            containerfile: containerfiles/Containerfile.aurora-dx-stable
             base_image: ghcr.io/ublue-os/aurora-dx:stable
             tag: stable
             image_name: okazakee/aurora-tuxedo-dx
             description: "Aurora DX Stable with Tuxedo drivers and TCC"
           - variant: aurora-dx-latest
-            containerfile: Containerfile.aurora-dx-latest
+            containerfile: containerfiles/Containerfile.aurora-dx-latest
             base_image: ghcr.io/ublue-os/aurora-dx:latest
             tag: latest
             image_name: okazakee/aurora-tuxedo-dx
             description: "Aurora DX Latest with Tuxedo drivers and TCC"
+          - variant: aurora-nvidia-stable
+            containerfile: containerfiles/Containerfile.aurora-nvidia
+            base_image: ghcr.io/ublue-os/aurora-nvidia:stable
+            tag: stable
+            image_name: okazakee/aurora-nvidia-tuxedo
+            description: "Aurora NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: aurora-nvidia-latest
+            containerfile: containerfiles/Containerfile.aurora-nvidia-latest
+            base_image: ghcr.io/ublue-os/aurora-nvidia:latest
+            tag: latest
+            image_name: okazakee/aurora-nvidia-tuxedo
+            description: "Aurora NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: aurora-dx-nvidia-stable
+            containerfile: containerfiles/Containerfile.aurora-dx-nvidia
+            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:stable
+            tag: stable
+            image_name: okazakee/aurora-dx-nvidia-tuxedo
+            description: "Aurora DX NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: aurora-dx-nvidia-latest
+            containerfile: containerfiles/Containerfile.aurora-dx-nvidia-latest
+            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:latest
+            tag: latest
+            image_name: okazakee/aurora-dx-nvidia-tuxedo
+            description: "Aurora DX NVIDIA Latest with Tuxedo drivers and TCC"
           # Bluefin variants
           - variant: bluefin-stable
-            containerfile: Containerfile.bluefin
+            containerfile: containerfiles/Containerfile.bluefin
             base_image: ghcr.io/ublue-os/bluefin:stable
             tag: stable
             image_name: okazakee/bluefin-tuxedo
             description: "Bluefin Stable with Tuxedo drivers and TCC"
           - variant: bluefin-latest
-            containerfile: Containerfile.bluefin-latest
+            containerfile: containerfiles/Containerfile.bluefin-latest
             base_image: ghcr.io/ublue-os/bluefin:latest
             tag: latest
             image_name: okazakee/bluefin-tuxedo
             description: "Bluefin Latest with Tuxedo drivers and TCC"
           - variant: bluefin-dx-stable
-            containerfile: Containerfile.bluefin-dx-stable
+            containerfile: containerfiles/Containerfile.bluefin-dx-stable
             base_image: ghcr.io/ublue-os/bluefin-dx:stable
             tag: stable
             image_name: okazakee/bluefin-tuxedo-dx
             description: "Bluefin DX Stable with Tuxedo drivers and TCC"
           - variant: bluefin-dx-latest
-            containerfile: Containerfile.bluefin-dx-latest
+            containerfile: containerfiles/Containerfile.bluefin-dx-latest
             base_image: ghcr.io/ublue-os/bluefin-dx:latest
             tag: latest
             image_name: okazakee/bluefin-tuxedo-dx
             description: "Bluefin DX Latest with Tuxedo drivers and TCC"
-          # Bazzite variant
+          # Bluefin NVIDIA variants
+          - variant: bluefin-nvidia-stable
+            containerfile: containerfiles/Containerfile.bluefin-nvidia
+            base_image: ghcr.io/ublue-os/bluefin-nvidia:stable
+            tag: stable
+            image_name: okazakee/bluefin-nvidia-tuxedo
+            description: "Bluefin NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: bluefin-nvidia-latest
+            containerfile: containerfiles/Containerfile.bluefin-nvidia-latest
+            base_image: ghcr.io/ublue-os/bluefin-nvidia:latest
+            tag: latest
+            image_name: okazakee/bluefin-nvidia-tuxedo
+            description: "Bluefin NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: bluefin-dx-nvidia-stable
+            containerfile: containerfiles/Containerfile.bluefin-dx-nvidia
+            base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:stable
+            tag: stable
+            image_name: okazakee/bluefin-dx-nvidia-tuxedo
+            description: "Bluefin DX NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: bluefin-dx-nvidia-latest
+            containerfile: containerfiles/Containerfile.bluefin-dx-nvidia-latest
+            base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:latest
+            tag: latest
+            image_name: okazakee/bluefin-dx-nvidia-tuxedo
+            description: "Bluefin DX NVIDIA Latest with Tuxedo drivers and TCC"
+          # Bazzite variants
           - variant: bazzite-stable
-            containerfile: Containerfile.bazzite
+            containerfile: containerfiles/Containerfile.bazzite
             base_image: ghcr.io/ublue-os/bazzite:stable
             tag: stable
             image_name: okazakee/bazzite-tuxedo
             description: "Bazzite Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-latest
+            containerfile: containerfiles/Containerfile.bazzite-latest
+            base_image: ghcr.io/ublue-os/bazzite:latest
+            tag: latest
+            image_name: okazakee/bazzite-tuxedo
+            description: "Bazzite Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-nvidia-stable
+            containerfile: containerfiles/Containerfile.bazzite-nvidia
+            base_image: ghcr.io/ublue-os/bazzite-nvidia:stable
+            tag: stable
+            image_name: okazakee/bazzite-nvidia-tuxedo
+            description: "Bazzite NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-nvidia-latest
+            containerfile: containerfiles/Containerfile.bazzite-nvidia-latest
+            base_image: ghcr.io/ublue-os/bazzite-nvidia:latest
+            tag: latest
+            image_name: okazakee/bazzite-nvidia-tuxedo
+            description: "Bazzite NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-stable
+            containerfile: containerfiles/Containerfile.bazzite-deck
+            base_image: ghcr.io/ublue-os/bazzite-deck:stable
+            tag: stable
+            image_name: okazakee/bazzite-deck-tuxedo
+            description: "Bazzite Deck Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-latest
+            containerfile: containerfiles/Containerfile.bazzite-deck-latest
+            base_image: ghcr.io/ublue-os/bazzite-deck:latest
+            tag: latest
+            image_name: okazakee/bazzite-deck-tuxedo
+            description: "Bazzite Deck Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-nvidia-open-stable
+            containerfile: containerfiles/Containerfile.bazzite-nvidia-open
+            base_image: ghcr.io/ublue-os/bazzite-nvidia-open:stable
+            tag: stable
+            image_name: okazakee/bazzite-nvidia-open-tuxedo
+            description: "Bazzite NVIDIA Open Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-nvidia-open-latest
+            containerfile: containerfiles/Containerfile.bazzite-nvidia-open-latest
+            base_image: ghcr.io/ublue-os/bazzite-nvidia-open:latest
+            tag: latest
+            image_name: okazakee/bazzite-nvidia-open-tuxedo
+            description: "Bazzite NVIDIA Open Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-nvidia-stable
+            containerfile: containerfiles/Containerfile.bazzite-deck-nvidia
+            base_image: ghcr.io/ublue-os/bazzite-deck-nvidia:stable
+            tag: stable
+            image_name: okazakee/bazzite-deck-nvidia-tuxedo
+            description: "Bazzite Deck NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-nvidia-latest
+            containerfile: containerfiles/Containerfile.bazzite-deck-nvidia-latest
+            base_image: ghcr.io/ublue-os/bazzite-deck-nvidia:latest
+            tag: latest
+            image_name: okazakee/bazzite-deck-nvidia-tuxedo
+            description: "Bazzite Deck NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-stable
+            containerfile: containerfiles/Containerfile.bazzite-gnome
+            base_image: ghcr.io/ublue-os/bazzite-gnome:stable
+            tag: stable
+            image_name: okazakee/bazzite-gnome-tuxedo
+            description: "Bazzite GNOME Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-latest
+            containerfile: containerfiles/Containerfile.bazzite-gnome-latest
+            base_image: ghcr.io/ublue-os/bazzite-gnome:latest
+            tag: latest
+            image_name: okazakee/bazzite-gnome-tuxedo
+            description: "Bazzite GNOME Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-nvidia-stable
+            containerfile: containerfiles/Containerfile.bazzite-gnome-nvidia
+            base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia:stable
+            tag: stable
+            image_name: okazakee/bazzite-gnome-nvidia-tuxedo
+            description: "Bazzite GNOME NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-nvidia-latest
+            containerfile: containerfiles/Containerfile.bazzite-gnome-nvidia-latest
+            base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia:latest
+            tag: latest
+            image_name: okazakee/bazzite-gnome-nvidia-tuxedo
+            description: "Bazzite GNOME NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-nvidia-open-stable
+            containerfile: containerfiles/Containerfile.bazzite-gnome-nvidia-open
+            base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable
+            tag: stable
+            image_name: okazakee/bazzite-gnome-nvidia-open-tuxedo
+            description: "Bazzite GNOME NVIDIA Open Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-gnome-nvidia-open-latest
+            containerfile: containerfiles/Containerfile.bazzite-gnome-nvidia-open-latest
+            base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest
+            tag: latest
+            image_name: okazakee/bazzite-gnome-nvidia-open-tuxedo
+            description: "Bazzite GNOME NVIDIA Open Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-gnome-stable
+            containerfile: containerfiles/Containerfile.bazzite-deck-gnome
+            base_image: ghcr.io/ublue-os/bazzite-deck-gnome:stable
+            tag: stable
+            image_name: okazakee/bazzite-deck-gnome-tuxedo
+            description: "Bazzite Deck GNOME Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-gnome-latest
+            containerfile: containerfiles/Containerfile.bazzite-deck-gnome-latest
+            base_image: ghcr.io/ublue-os/bazzite-deck-gnome:latest
+            tag: latest
+            image_name: okazakee/bazzite-deck-gnome-tuxedo
+            description: "Bazzite Deck GNOME Latest with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-nvidia-gnome-stable
+            containerfile: containerfiles/Containerfile.bazzite-deck-nvidia-gnome
+            base_image: ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable
+            tag: stable
+            image_name: okazakee/bazzite-deck-nvidia-gnome-tuxedo
+            description: "Bazzite Deck NVIDIA GNOME Stable with Tuxedo drivers and TCC"
+          - variant: bazzite-deck-nvidia-gnome-latest
+            containerfile: containerfiles/Containerfile.bazzite-deck-nvidia-gnome-latest
+            base_image: ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest
+            tag: latest
+            image_name: okazakee/bazzite-deck-nvidia-gnome-tuxedo
+            description: "Bazzite Deck NVIDIA GNOME Latest with Tuxedo drivers and TCC"
 
     steps:
       - name: Checkout repository
@@ -159,7 +322,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./${{ matrix.containerfile }}
+          file: ${{ matrix.containerfile }}
           push: true
           tags: ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -178,7 +341,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./${{ matrix.containerfile }}
+          file: ${{ matrix.containerfile }}
           push: false
           load: true
           tags: ${{ env.REGISTRY }}/${{ matrix.image_name }}:${{ matrix.tag }}
