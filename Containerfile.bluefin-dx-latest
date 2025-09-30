@@ -92,24 +92,37 @@ RUN set -eux; \
         echo "Updated desktop file"; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
-    # Update systemd service files to use /usr/lib path and make them more resilient
+    # Update systemd service files to use /usr/lib path
     for service_file in /etc/systemd/system/tccd*.service; do \
         if [ -f "$service_file" ]; then \
             sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' "$service_file"; \
-            # Make service restart on failure and not fail the system
-            if ! grep -q "Restart=" "$service_file"; then \
-                sed -i '/\[Service\]/a Restart=on-failure\nRestartSec=10s' "$service_file"; \
-            fi; \
-            # Make it Type=simple to avoid startup issues
-            sed -i 's/Type=.*/Type=simple/' "$service_file" || true; \
-            echo "Updated and hardened $service_file"; \
+            echo "Updated $service_file"; \
+        fi; \
+    done; \
+    # Disable tccd services (binary has CPU incompatibility causing SIGILL on some systems)
+    systemctl disable tccd.service 2>/dev/null || true; \
+    systemctl disable tccd-sleep.service 2>/dev/null || true; \
+    echo "⚠️  tccd daemon disabled due to CPU compatibility issues"; \
+    # Fix autostart entries to use our wrapper script
+    for autostart_file in /etc/xdg/autostart/tuxedo-control-center*.desktop; do \
+        if [ -f "$autostart_file" ]; then \
+            sed -i 's|Exec=.*|Exec=/usr/bin/tuxedo-control-center --tray|g' "$autostart_file"; \
+            echo "Fixed autostart: $autostart_file"; \
         fi; \
     done
 
-# Create CLI wrapper (using install for atomic creation with permissions)
+# Create CLI wrapper with Wayland fixes (using install for atomic creation with permissions)
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
-exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
+# Kill any stuck instances
+pkill -f "tuxedo-control-center" 2>/dev/null || true
+sleep 0.5
+# Launch with flags to force window display on Wayland
+exec /usr/lib/tuxedo-control-center/tuxedo-control-center \
+  --no-single-instance \
+  --enable-features=UseOzonePlatform,WaylandWindowDecorations \
+  --ozone-platform=wayland \
+  "$@"
 EOF
 
 RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
