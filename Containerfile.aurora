@@ -23,52 +23,36 @@ RUN set -eux; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
 
-# Install TCC - rpm-ostree requires /opt to be set up properly
+# Install TCC - move to /usr/lib for ostree compatibility
 RUN set -eux; \
-    # Ensure /var/opt exists (ostree persistent location)
-    mkdir -p /var/opt; \
-    # Install TCC
+    # Install TCC to temporary location
     dnf -y install tuxedo-control-center && \
     dnf -y clean all; \
-    # On ostree, /opt should symlink to /var/opt - ensure it exists
-    if [ ! -e /opt ] || [ ! -L /opt ]; then \
-        rm -rf /opt 2>/dev/null || true; \
-        ln -sf /var/opt /opt; \
-        echo "Created /opt -> /var/opt symlink for ostree"; \
+    # Move from /opt to /usr/lib (ostree-compatible location)
+    if [ -d /opt/tuxedo-control-center ]; then \
+        mkdir -p /usr/lib/tuxedo-control-center; \
+        cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
+        rm -rf /opt/tuxedo-control-center; \
+        echo "Moved TCC to /usr/lib/tuxedo-control-center"; \
     fi; \
-    # Move TCC from /opt to /var/opt if needed
-    if [ -d /opt/tuxedo-control-center ] && [ ! -L /opt ]; then \
-        mv /opt/tuxedo-control-center /var/opt/ 2>/dev/null || true; \
+    # Create symlink from /opt back to /usr/lib for compatibility
+    mkdir -p /var/opt; \
+    ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
+    # Verify
+    ls -la /usr/lib/tuxedo-control-center/ | head -20; \
+    # Update desktop file
+    if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
+        sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
+        echo "Updated desktop file"; \
+        cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
-    # Verify installation
-    echo "Checking /opt and /var/opt:"; \
-    ls -la /opt/ 2>/dev/null || echo "/opt not accessible"; \
-    ls -la /var/opt/ 2>/dev/null || echo "/var/opt empty"; \
-    # Find TCC installation
-    TCC_DIR=""; \
-    if [ -d /var/opt/tuxedo-control-center ]; then \
-        TCC_DIR="/var/opt/tuxedo-control-center"; \
-    elif [ -d /opt/tuxedo-control-center ]; then \
-        TCC_DIR="/opt/tuxedo-control-center"; \
-    fi; \
-    if [ -n "${TCC_DIR}" ]; then \
-        echo "TCC installed at: ${TCC_DIR}"; \
-        ls -la "${TCC_DIR}"; \
-        # Create CLI symlink
-        if [ -x "${TCC_DIR}/tuxedo-control-center" ]; then \
-            ln -sf "${TCC_DIR}/tuxedo-control-center" /usr/bin/tuxedo-control-center; \
-            echo "Created /usr/bin/tuxedo-control-center symlink"; \
-        fi; \
-        # Fix desktop file to use correct path
-        if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
-            sed -i "s|/opt/tuxedo-control-center|${TCC_DIR}|g" /usr/share/applications/tuxedo-control-center.desktop; \
-            echo "Updated desktop file paths"; \
-            cat /usr/share/applications/tuxedo-control-center.desktop; \
-        fi; \
-    else \
-        echo "ERROR: TCC installation directory not found"; \
-        exit 1; \
-    fi
+    # Create CLI wrapper
+    cat > /usr/bin/tuxedo-control-center <<'WRAPPER'
+#!/bin/bash
+exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
+WRAPPER
+    chmod +x /usr/bin/tuxedo-control-center; \
+    echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 
 # Verify tuxedo-drivers installation
 RUN set -eux; \
