@@ -2,93 +2,93 @@
 FROM ghcr.io/ublue-os/bluefin-nvidia:latest
 ENV LANG=C.UTF-8
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
+ \
 # Add TUXEDO official repo and setup GPG key
 RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
     "${FEDORA_VER}" "${FEDORA_VER}" > /etc/yum.repos.d/tuxedo.repo && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
-
+ \
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
 # Install drivers normally so DKMS builds modules during the build
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
     dnf -y install tuxedo-drivers && \
     dnf -y clean all
-
+ \
 # Build DKMS modules for the installed kernel inside the image
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
     echo "Building DKMS modules for ${KVER}"; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
-
+ \
 # Install TCC - move to /usr/lib for ostree compatibility
 RUN set -eux; \
-    # Pre-create /opt as regular directory (Aurora might have it as symlink)
+    # Pre-create /opt as regular directory (Aurora might have it as symlink) \
     if [ -L /opt ]; then \
         rm /opt; \
         mkdir -p /opt; \
     elif [ ! -d /opt ]; then \
         mkdir -p /opt; \
     fi; \
-    # Install TCC
+    # Install TCC \
     dnf -y install tuxedo-control-center && dnf -y clean all; \
-    # Verify installation
+    # Verify installation \
     if [ ! -d /opt/tuxedo-control-center ]; then \
         echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
         rpm -ql tuxedo-control-center || true; \
         exit 1; \
     fi; \
-    # Move from /opt to /usr/lib (ostree-compatible location)
+    # Move from /opt to /usr/lib (ostree-compatible location) \
     mkdir -p /usr/lib/tuxedo-control-center; \
     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
     rm -rf /opt/tuxedo-control-center; \
     # Create symlink for compatibility
     mkdir -p /var/opt; \
     ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
-    # Update desktop file path
+    # Update desktop file path \
     if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
         sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
-    # Update systemd service files paths (tccd.service and tccd-sleep.service)
+    # Update systemd service files paths (tccd.service and tccd-sleep.service) \
     for service_file in /etc/systemd/system/tccd*.service; do \
         if [ -f "$service_file" ]; then \
             sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' "$service_file"; \
         fi; \
     done; \
-    # Services are enabled by default during install, keep them enabled
+    # Services are enabled by default during install, keep them enabled \
     systemctl enable tccd.service 2>/dev/null || true; \
     systemctl enable tccd-sleep.service 2>/dev/null || true; \
-    # Verify service files exist and show their contents
-    echo "=== Checking tccd service files ===";
-    ls -la /etc/systemd/system/tccd*.service || echo "No service files found in /etc/systemd/system";
-    for svc in /etc/systemd/system/tccd*.service; do
-        if [ -f "$svc" ]; then
-            echo "--- Content of $svc ---";
-            cat "$svc";
-        fi;
-    done;
-    # Also check if services are in /usr/lib/systemd/system
-    ls -la /usr/lib/systemd/system/tccd*.service 2>/dev/null || echo "No service files in /usr/lib/systemd/system";
-    # Verify the tccd binary exists and is executable
-    echo "=== Checking tccd binary ===";
-    ls -la /usr/lib/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd || echo "tccd binary not found";
-    # Check symlinks
-    echo "=== Checking symlinks ===";
-    ls -la /opt/tuxedo-control-center || echo "/opt symlink missing";
-    ls -la /var/opt/tuxedo-control-center || echo "/var/opt symlink missing";
+    # Verify service files exist and show their contents \
+    echo "=== Checking tccd service files ==="; \
+    ls -la /etc/systemd/system/tccd*.service || echo "No service files found in /etc/systemd/system"; \
+    for svc in /etc/systemd/system/tccd*.service; do \
+        if [ -f "$svc" ]; then \
+            echo "--- Content of $svc ---"; \
+            cat "$svc"; \
+        fi; \
+    done; \
+    # Also check if services are in /usr/lib/systemd/system \
+    ls -la /usr/lib/systemd/system/tccd*.service 2>/dev/null || echo "No service files in /usr/lib/systemd/system"; \
+    # Verify the tccd binary exists and is executable \
+    echo "=== Checking tccd binary ==="; \
+    ls -la /usr/lib/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd || echo "tccd binary not found"; \
+    # Check symlinks \
+    echo "=== Checking symlinks ==="; \
+    ls -la /opt/tuxedo-control-center || echo "/opt symlink missing"; \
+    ls -la /var/opt/tuxedo-control-center || echo "/var/opt symlink missing"; \
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center with tccd service enabled"
+ \
 
 # Create CLI wrapper for consistent launch behavior
-RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
 # Launch TCC - pass all arguments through
 exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
-
+ \
 RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
-
+ \
 # Verify tuxedo-drivers installation
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
@@ -99,24 +99,24 @@ RUN set -eux; \
     find /lib/modules -name "tuxedo*.ko*" || echo "No tuxedo modules found"; \
     # Update module dependencies
     depmod -a ${KVER} || true
-
+ \
 # Ensure modules auto-load on boot
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
-
+ \
 # Copy overlay files
 COPY overlay/ /
-
+ \
 # Copy setup script
 COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
 RUN chmod +x /usr/bin/setup-secureboot
-
+ \
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
 # File is already copied from overlay with correct permissions
-
+ \
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
-
+ \
 LABEL org.opencontainers.image.title="bluefin-nvidia-tuxedo"
 LABEL org.opencontainers.image.description="Bluefin NVIDIA Latest with Tuxedo drivers and TCC for InfinityBook laptops"
 LABEL org.opencontainers.image.vendor="Bluefin Tuxedo"
-
+ \

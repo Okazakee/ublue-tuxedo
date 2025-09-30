@@ -1,6 +1,6 @@
 # Universal Blue Tuxedo
 
-Universal Blue OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for InfinityBook laptops.
+Universal Blue OCI images with official Tuxedo drivers and TCC (Tuxedo Control Center) for Tuxedo laptops.
 
 Supports **Aurora** (KDE Plasma), **Bluefin** (GNOME), and **Bazzite** (Gaming/Desktop/Deck) with stable/latest kernel variants, NVIDIA support, and open-source NVIDIA drivers. **36 total variants available** - the most comprehensive Universal Blue Tuxedo collection!
 
