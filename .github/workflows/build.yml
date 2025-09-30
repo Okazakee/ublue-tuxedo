@@ -154,7 +154,7 @@ jobs:
       - name: Test built image
         shell: bash
         run: |
-          docker run --rm "$TEST_IMAGE" bash -e -o pipefail - <<'SCRIPT'
+          docker run --rm "$TEST_IMAGE" bash -e -o pipefail - <<'EOF'
           echo "=== Testing variant ==="
           echo "Checking TCC package..."
           rpm -q tuxedo-control-center || { echo "ERROR: TCC package not installed"; exit 1; }
@@ -179,13 +179,12 @@ jobs:
           echo "Checking modules-load.d config..."
           [ -f /etc/modules-load.d/tuxedo.conf ] && grep -q tuxedo_keyboard /etc/modules-load.d/tuxedo.conf || { echo "ERROR: modules-load.d config missing"; exit 1; }
           echo "=== All tests passed ==="
-SCRIPT
+          EOF
 
       - name: Promote image tags (main/master only)
-        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        if: ${{ github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
         run: |
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }} \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }} \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
-
