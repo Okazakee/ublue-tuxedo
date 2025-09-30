@@ -11,10 +11,17 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
-# Install drivers first with noscripts to skip DKMS
+# Install drivers normally so DKMS builds modules during the build
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
-    dnf -y install --setopt=tsflags=noscripts tuxedo-drivers && \
+    dnf -y install tuxedo-drivers && \
     dnf -y clean all
+
+# Build DKMS modules for the installed kernel inside the image
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    echo "Building DKMS modules for ${KVER}"; \
+    dkms autoinstall -k "${KVER}" || true; \
+    depmod -a "${KVER}" || true
 
 # Pre-create target dir to avoid RPM cpio errors, then install TCC
 RUN if [ -L /opt ]; then \
