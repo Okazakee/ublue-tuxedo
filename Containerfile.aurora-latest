@@ -129,37 +129,6 @@ RUN chmod +x /usr/bin/setup-secureboot
 # Cleanup
 RUN rm -rf /var/cache/dnf/* /var/tmp/*
 
-LABEL org.opencontainers.image.title="aurora-tuxedo"
-LABEL org.opencontainers.image.description="Aurora with Tuxedo drivers and TCC for InfinityBook laptops"
-LABEL org.opencontainers.image.vendor="Aurora Tuxedo"
-
-# Verify tuxedo-drivers installation
-RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
-    echo "Checking modules for kernel: ${KVER}"; \
-    # List installed tuxedo files
-    rpm -ql tuxedo-drivers || echo "tuxedo-drivers package contents not found"; \
-    # Check if modules are in standard location
-    find /lib/modules -name "tuxedo*.ko*" || echo "No tuxedo modules found"; \
-    # Update module dependencies
-    depmod -a ${KVER} || true
-
-# Ensure modules auto-load on boot
-RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
-
-# Copy overlay files
-COPY overlay/ /
-
-# Copy setup script
-COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
-RUN chmod +x /usr/bin/setup-secureboot
-
-# Resume hook to re-init keyboard on resume (fixes backlight reinit)
-# File is already copied from overlay with correct permissions
-
-# Cleanup
-RUN rm -rf /var/cache/dnf/* /var/tmp/*
-
 LABEL org.opencontainers.image.title="aurora-tuxedo-latest"
 LABEL org.opencontainers.image.description="Aurora Latest with Tuxedo drivers and TCC for InfinityBook laptops"
 LABEL org.opencontainers.image.vendor="Aurora Tuxedo"
