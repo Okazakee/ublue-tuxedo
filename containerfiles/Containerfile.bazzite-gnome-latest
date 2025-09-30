@@ -44,10 +44,10 @@ RUN set -eux; \
     mkdir -p /usr/lib/tuxedo-control-center; \
     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
     rm -rf /opt/tuxedo-control-center; \
-    # Create symlinks for compatibility (both /opt and /var/opt)
-    mkdir -p /var/opt;
-    ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center;
-    # Create /opt symlink (some TCC components may look here)
+    # Create symlinks for compatibility (both /opt and /var/opt) \
+    mkdir -p /var/opt; \
+    ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
+    # Create /opt symlink (some TCC components may look here) \
     ln -sf /usr/lib/tuxedo-control-center /opt/tuxedo-control-center; \
     # Update desktop file path
     if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
