@@ -94,6 +94,9 @@ jobs:
           driver-opts: |
             image=moby/buildkit:latest
 
+      - name: Set short SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -107,9 +110,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ matrix.tag }},enable={{is_default_branch}}
-            type=raw,value=${{ matrix.tag }}-{{sha}},enable={{is_default_branch}}
 
       - name: Build image and push temp tag (non-PR)
         if: github.event_name != 'pull_request'
@@ -119,7 +119,7 @@ jobs:
           context: .
           file: ./${{ matrix.containerfile }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -129,7 +129,7 @@ jobs:
 
       - name: Set test image (non-PR)
         if: github.event_name != 'pull_request'
-        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}" >> $GITHUB_ENV
+        run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}" >> $GITHUB_ENV
 
       - name: Build image local (PR)
         if: github.event_name == 'pull_request'
@@ -152,100 +152,40 @@ jobs:
         run: echo "TEST_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}" >> $GITHUB_ENV
 
       - name: Test built image
+        shell: bash
         run: |
-          docker run --rm $TEST_IMAGE \
-            bash -c "
-              set -e
-              echo '=== Testing ${{ matrix.variant }} variant ==='
-              echo 'Checking TCC package...'
-              rpm -q tuxedo-control-center || { echo 'ERROR: TCC package not installed'; exit 1; }
-              echo 'Checking tuxedo-drivers package...'
-              rpm -q tuxedo-drivers || { echo 'ERROR: tuxedo-drivers package not installed'; exit 1; }
-              echo 'Checking kernel modules...'
-              KVER=\$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)
-              echo "Kernel version: \${KVER}"
-              MODULE_COUNT=\$(find /lib/modules/\${KVER} -name 'tuxedo*.ko*' | wc -l)
-              if [ "\${MODULE_COUNT}" -eq 0 ]; then
-                echo 'ERROR: No tuxedo kernel modules found'
-                echo 'Searching all kernel versions:'
-                find /lib/modules -name 'tuxedo*.ko*' || echo 'No modules found anywhere'
-                exit 1
-              fi
-              echo "Found \${MODULE_COUNT} tuxedo module(s)"
-              find /lib/modules/\${KVER} -name 'tuxedo*.ko*'
-              echo 'Checking setup script...'
-              [ -f /usr/bin/setup-secureboot ] && [ -x /usr/bin/setup-secureboot ] || { echo 'ERROR: setup-secureboot missing or not executable'; exit 1; }
-              echo 'Checking systemd-sleep hook...'
-              [ -x /usr/lib/systemd/system-sleep/tuxedo-keyboard ] || { echo 'ERROR: systemd-sleep hook missing or not executable'; exit 1; }
-              echo 'Checking modules-load.d config...'
-              [ -f /etc/modules-load.d/tuxedo.conf ] && grep -q tuxedo_keyboard /etc/modules-load.d/tuxedo.conf || { echo 'ERROR: modules-load.d config missing'; exit 1; }
-              echo '=== All tests passed ==='
-            "
+          docker run --rm "$TEST_IMAGE" bash -e -o pipefail - <<'SCRIPT'
+          echo "=== Testing variant ==="
+          echo "Checking TCC package..."
+          rpm -q tuxedo-control-center || { echo "ERROR: TCC package not installed"; exit 1; }
+          echo "Checking tuxedo-drivers package..."
+          rpm -q tuxedo-drivers || { echo "ERROR: tuxedo-drivers package not installed"; exit 1; }
+          echo "Checking kernel modules..."
+          KVER=$(rpm -q kernel --qf "%{VERSION}-%{RELEASE}.%{ARCH}\n" | tail -1)
+          echo "Kernel version: ${KVER}"
+          MODULE_COUNT=$(find /lib/modules/${KVER} -name "tuxedo*.ko*" | wc -l)
+          if [ "${MODULE_COUNT}" -eq 0 ]; then
+            echo "ERROR: No tuxedo kernel modules found"
+            echo "Searching all kernel versions:"
+            find /lib/modules -name "tuxedo*.ko*" || echo "No modules found anywhere"
+            exit 1
+          fi
+          echo "Found ${MODULE_COUNT} tuxedo module(s)"
+          find /lib/modules/${KVER} -name "tuxedo*.ko*"
+          echo "Checking setup script..."
+          [ -f /usr/bin/setup-secureboot ] && [ -x /usr/bin/setup-secureboot ] || { echo "ERROR: setup-secureboot missing or not executable"; exit 1; }
+          echo "Checking systemd-sleep hook..."
+          [ -x /usr/lib/systemd/system-sleep/tuxedo-keyboard ] || { echo "ERROR: systemd-sleep hook missing or not executable"; exit 1; }
+          echo "Checking modules-load.d config..."
+          [ -f /etc/modules-load.d/tuxedo.conf ] && grep -q tuxedo_keyboard /etc/modules-load.d/tuxedo.conf || { echo "ERROR: modules-load.d config missing"; exit 1; }
+          echo "=== All tests passed ==="
+SCRIPT
 
-      - name: Promote image tags (non-PR)
-        if: github.event_name != 'pull_request'
+      - name: Promote image tags (main/master only)
+        if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         run: |
           docker buildx imagetools create \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }} \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ github.sha }} \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ github.sha }}
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-${{ env.SHORT_SHA }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.tag }}-ci-${{ env.SHORT_SHA }}
 
-  push-images:
-    needs: [check-aurora-updates, build-and-test]
-    if: needs.check-aurora-updates.outputs.skip_build == 'false' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        variant: [stable, latest, dx]
-        include:
-          - variant: stable
-            containerfile: Containerfile
-            tag: stable
-          - variant: latest
-            containerfile: Containerfile.latest
-            tag: latest
-          - variant: dx
-            containerfile: Containerfile.dx
-            tag: dx
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ matrix.tag }},enable={{is_default_branch}}
-            type=raw,value=${{ matrix.tag }}-{{sha}},enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./${{ matrix.containerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
