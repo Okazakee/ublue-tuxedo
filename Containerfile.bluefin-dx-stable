@@ -27,27 +27,16 @@ RUN set -eux; \
 RUN set -eux; \
     # Pre-create /opt as regular directory (Aurora might have it as symlink)
     if [ -L /opt ]; then \
-        echo "/opt is a symlink, removing it"; \
         rm /opt; \
         mkdir -p /opt; \
     elif [ ! -d /opt ]; then \
         mkdir -p /opt; \
     fi; \
-    # Install TCC to temporary location (check logs if it fails)
-    echo "Installing tuxedo-control-center..."; \
-    dnf -y install tuxedo-control-center || { \
-        echo "ERROR: Failed to install tuxedo-control-center"; \
-        echo "Checking repository:"; \
-        dnf repolist -v | grep -i tuxedo || true; \
-        echo "Checking if package exists:"; \
-        dnf list tuxedo-control-center || true; \
-        exit 1; \
-    }; \
-    dnf -y clean all; \
-    # Verify TCC was installed
+    # Install TCC
+    dnf -y install tuxedo-control-center && dnf -y clean all; \
+    # Verify installation
     if [ ! -d /opt/tuxedo-control-center ]; then \
         echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
-        ls -la /opt/ || true; \
         rpm -ql tuxedo-control-center || true; \
         exit 1; \
     fi; \
@@ -55,49 +44,29 @@ RUN set -eux; \
     mkdir -p /usr/lib/tuxedo-control-center; \
     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
     rm -rf /opt/tuxedo-control-center; \
-    echo "Moved TCC to /usr/lib/tuxedo-control-center"; \
-    # Create symlink from /var/opt back to /usr/lib for compatibility
+    # Create symlink for compatibility
     mkdir -p /var/opt; \
     ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
-    # Verify
-    ls -la /usr/lib/tuxedo-control-center/ | head -20; \
-    # Update desktop file
+    # Update desktop file path
     if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
         sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
-        echo "Updated desktop file"; \
-        cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
-    # Update systemd service files to use /usr/lib path
+    # Update systemd service files paths (tccd.service and tccd-sleep.service)
     for service_file in /etc/systemd/system/tccd*.service; do \
         if [ -f "$service_file" ]; then \
             sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' "$service_file"; \
-            echo "Updated $service_file"; \
         fi; \
     done; \
-    # Disable tccd services (binary has CPU incompatibility causing SIGILL on some systems)
-    systemctl disable tccd.service 2>/dev/null || true; \
-    systemctl disable tccd-sleep.service 2>/dev/null || true; \
-    echo "⚠️  tccd daemon disabled due to CPU compatibility issues"; \
-    # Fix autostart entries to use our wrapper script
-    for autostart_file in /etc/xdg/autostart/tuxedo-control-center*.desktop; do \
-        if [ -f "$autostart_file" ]; then \
-            sed -i 's|Exec=.*|Exec=/usr/bin/tuxedo-control-center --tray|g' "$autostart_file"; \
-            echo "Fixed autostart: $autostart_file"; \
-        fi; \
-    done
+    # Services are enabled by default during install, keep them enabled
+    systemctl enable tccd.service 2>/dev/null || true; \
+    systemctl enable tccd-sleep.service 2>/dev/null || true; \
+    echo "✅ TCC installed to /usr/lib/tuxedo-control-center with tccd service enabled"
 
-# Create CLI wrapper with Wayland fixes (using install for atomic creation with permissions)
+# Create CLI wrapper for consistent launch behavior
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
-# Kill any stuck instances
-pkill -f "tuxedo-control-center" 2>/dev/null || true
-sleep 0.5
-# Launch with flags to force window display on Wayland
-exec /usr/lib/tuxedo-control-center/tuxedo-control-center \
-  --no-single-instance \
-  --enable-features=UseOzonePlatform,WaylandWindowDecorations \
-  --ozone-platform=wayland \
-  "$@"
+# Launch TCC - pass all arguments through
+exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
 
 RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
