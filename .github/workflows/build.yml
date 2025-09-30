@@ -139,12 +139,55 @@ jobs:
         run: |
           docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.variant }} \
             bash -c "
-              echo 'Testing ${{ matrix.variant }} variant...'
-              echo 'Testing Tuxedo packages...'
-              rpm -qa | grep -E '(tuxedo|dkms)' || echo 'No Tuxedo packages found'
-              echo 'Testing modules...'
-              ls -la /lib/modules/*/updates/ | grep tuxedo || echo 'No Tuxedo modules found'
-              echo 'Testing scripts...'
-              ls -la /usr/bin/setup-secureboot || echo 'Setup script not found'
-              echo '${{ matrix.variant }} variant test completed'
+              set -e
+              echo '=== Testing ${{ matrix.variant }} variant ==='
+              
+              echo 'Checking TCC package...'
+              rpm -q tuxedo-control-center || { echo 'ERROR: TCC package not installed'; exit 1; }
+              
+              echo 'Checking tuxedo-drivers package...'
+              rpm -q tuxedo-drivers || { echo 'ERROR: tuxedo-drivers package not installed'; exit 1; }
+              
+              echo 'Checking kernel modules...'
+              KVER=\$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1)
+              echo \"Kernel version: \${KVER}\"
+              
+              MODULE_COUNT=\$(find /lib/modules/\${KVER} -name 'tuxedo*.ko*' | wc -l)
+              if [ \"\${MODULE_COUNT}\" -eq 0 ]; then
+                echo 'ERROR: No tuxedo kernel modules found'
+                echo 'Searching all kernel versions:'
+                find /lib/modules -name 'tuxedo*.ko*' || echo 'No modules found anywhere'
+                exit 1
+              fi
+              echo \"Found \${MODULE_COUNT} tuxedo module(s)\"
+              find /lib/modules/\${KVER} -name 'tuxedo*.ko*'
+              
+              echo 'Checking setup script...'
+              if [ ! -f /usr/bin/setup-secureboot ]; then
+                echo 'ERROR: setup-secureboot script not found'
+                exit 1
+              fi
+              if [ ! -x /usr/bin/setup-secureboot ]; then
+                echo 'ERROR: setup-secureboot script not executable'
+                exit 1
+              fi
+              
+              echo 'Checking systemd-sleep hook...'
+              if [ ! -f /usr/lib/systemd/system-sleep/tuxedo-keyboard ]; then
+                echo 'ERROR: systemd-sleep hook not found'
+                exit 1
+              fi
+              if [ ! -x /usr/lib/systemd/system-sleep/tuxedo-keyboard ]; then
+                echo 'ERROR: systemd-sleep hook not executable'
+                exit 1
+              fi
+              
+              echo 'Checking modules-load.d config...'
+              if [ ! -f /etc/modules-load.d/tuxedo.conf ]; then
+                echo 'ERROR: modules-load.d config not found'
+                exit 1
+              fi
+              grep -q 'tuxedo_keyboard' /etc/modules-load.d/tuxedo.conf || { echo 'ERROR: tuxedo_keyboard not in modules-load.d'; exit 1; }
+              
+              echo '=== All tests passed for ${{ matrix.variant }} ==='
             "

@@ -10,40 +10,21 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 
-# Install vendor packages + build deps
+# Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
-    dnf -y install tuxedo-control-center tuxedo-drivers dkms gcc make perl kernel-devel python3-pip || true && \
+    dnf -y install tuxedo-control-center && \
     dnf -y clean all
 
-# DKMS / prebuild modules (PR: ensure building in writable tmp)
+# Verify tuxedo-drivers installation
 RUN set -eux; \
-    # Get the kernel version from installed kernel package
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
-    echo "Building modules for kernel: ${KVER}"; \
-    # Ensure kernel headers are available
-    if [ ! -d "/lib/modules/${KVER}/build" ]; then \
-      echo "Kernel headers not found for ${KVER}"; \
-      ls -la /lib/modules/ || true; \
-      exit 1; \
-    fi; \
-    # Create writable build location
-    mkdir -p /tmp/tuxedo-drivers-build; \
-    # Copy DKMS sources to writable location if they exist
-    if [ -d "/usr/src/tuxedo-drivers" ]; then \
-      cp -r /usr/src/tuxedo-drivers /tmp/tuxedo-drivers-build/; \
-      cd /tmp/tuxedo-drivers-build/tuxedo-drivers; \
-      # Build modules for the correct kernel
-      make KDIR=/lib/modules/${KVER}/build; \
-      # Install modules to the correct kernel version
-      make KDIR=/lib/modules/${KVER}/build INSTALL_MOD_PATH=/ INSTALL_MOD_DIR=updates modules_install; \
-      # Update module dependencies
-      depmod -a ${KVER}; \
-      # Verify modules were installed
-      ls -la /lib/modules/${KVER}/updates/ || echo "Warning: updates directory not found"; \
-    else \
-      echo "DKMS sources not found in /usr/src/tuxedo-drivers"; \
-      exit 1; \
-    fi
+    echo "Checking modules for kernel: ${KVER}"; \
+    # List installed tuxedo files
+    rpm -ql tuxedo-drivers || echo "tuxedo-drivers package contents not found"; \
+    # Check if modules are in standard location
+    find /lib/modules -name "tuxedo*.ko*" || echo "No tuxedo modules found"; \
+    # Update module dependencies
+    depmod -a ${KVER} || true
 
 # Ensure modules auto-load on boot
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
