@@ -5,6 +5,8 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  schedule:
+    - cron: "0 2 * * 0" # Weekly on Sunday at 2 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -28,7 +30,17 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
+      - name: Check if scheduled run
+        id: is_scheduled
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "scheduled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "scheduled=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.is_scheduled.outputs.scheduled == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y skopeo jq
@@ -36,7 +48,20 @@ jobs:
       - name: Check Aurora digest
         id: check
         run: |
-          ./scripts/check-aurora-digest.sh
+          if [ "${{ steps.is_scheduled.outputs.scheduled }}" = "true" ]; then
+            ./scripts/check-aurora-digest.sh
+          else
+            echo "skip_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit digest file
+        if: steps.is_scheduled.outputs.scheduled == 'true' && steps.check.outputs.skip_build == 'false' && github.event_name != 'pull_request'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .aurora-digest
+          git diff --staged --quiet || git commit -m "Update Aurora digest [skip ci]"
+          git push
 
   build-and-push:
     needs: check-aurora-updates
@@ -98,15 +123,6 @@ jobs:
           platforms: linux/amd64
           build-args: |
             BUILDKIT_INLINE_CACHE=1
-
-      - name: Update digest file
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.variant == 'stable'
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .aurora-digest
-          git diff --staged --quiet || git commit -m "Update Aurora digest"
-          git push
 
   test-images:
     needs: [check-aurora-updates, build-and-push]
