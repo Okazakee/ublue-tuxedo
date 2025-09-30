@@ -47,10 +47,7 @@ RUN set -eux; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
     # Create CLI wrapper
-    cat > /usr/bin/tuxedo-control-center <<'EOF' ; \
-#!/bin/bash
-exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
-EOF
+    printf '#!/bin/bash\nexec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"\n' > /usr/bin/tuxedo-control-center && \
     chmod +x /usr/bin/tuxedo-control-center && \
     echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 
