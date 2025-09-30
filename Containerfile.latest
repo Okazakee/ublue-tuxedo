@@ -17,23 +17,32 @@ RUN dnf -y upgrade --setopt=install_weak_deps=False && \
 
 # DKMS / prebuild modules (PR: ensure building in writable tmp)
 RUN set -eux; \
+    # Get the kernel version from installed kernel package
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    echo "Building modules for kernel: ${KVER}"; \
+    # Ensure kernel headers are available
+    if [ ! -d "/lib/modules/${KVER}/build" ]; then \
+      echo "Kernel headers not found for ${KVER}"; \
+      ls -la /lib/modules/ || true; \
+      exit 1; \
+    fi; \
+    # Create writable build location
     mkdir -p /tmp/tuxedo-drivers-build; \
     # Copy DKMS sources to writable location if they exist
     if [ -d "/usr/src/tuxedo-drivers" ]; then \
       cp -r /usr/src/tuxedo-drivers /tmp/tuxedo-drivers-build/; \
-    fi; \
-    # Try DKMS autoinstall first
-    dkms autoinstall || true; \
-    # Manual build in writable location if DKMS sources exist
-    if [ -d "/tmp/tuxedo-drivers-build/tuxedo-drivers" ]; then \
-      cd /tmp/tuxedo-drivers-build/tuxedo-drivers && \
-      make && \
-      make modules_install; \
-    fi; \
-    # Ensure modules installed to updates dir and update dependencies
-    KVER=$(uname -r); \
-    if [ -d "/lib/modules/${KVER}" ]; then \
-      depmod -a || true; \
+      cd /tmp/tuxedo-drivers-build/tuxedo-drivers; \
+      # Build modules for the correct kernel
+      make KDIR=/lib/modules/${KVER}/build; \
+      # Install modules to the correct kernel version
+      make KDIR=/lib/modules/${KVER}/build INSTALL_MOD_PATH=/ INSTALL_MOD_DIR=updates modules_install; \
+      # Update module dependencies
+      depmod -a ${KVER}; \
+      # Verify modules were installed
+      ls -la /lib/modules/${KVER}/updates/ || echo "Warning: updates directory not found"; \
+    else \
+      echo "DKMS sources not found in /usr/src/tuxedo-drivers"; \
+      exit 1; \
     fi
 
 # Ensure modules auto-load on boot
