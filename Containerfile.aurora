@@ -66,7 +66,20 @@ RUN set -eux; \
         sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
         echo "Updated desktop file"; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
-    fi
+    fi; \
+    # Update systemd service files to use /usr/lib path and make them more resilient
+    for service_file in /etc/systemd/system/tccd*.service; do \
+        if [ -f "$service_file" ]; then \
+            sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' "$service_file"; \
+            # Make service restart on failure and not fail the system
+            if ! grep -q "Restart=" "$service_file"; then \
+                sed -i '/\[Service\]/a Restart=on-failure\nRestartSec=10s' "$service_file"; \
+            fi; \
+            # Make it Type=simple to avoid startup issues
+            sed -i 's/Type=.*/Type=simple/' "$service_file" || true; \
+            echo "Updated and hardened $service_file"; \
+        fi; \
+    done
 
 # Create CLI wrapper (using install for atomic creation with permissions)
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
