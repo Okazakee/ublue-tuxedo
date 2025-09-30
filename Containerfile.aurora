@@ -68,7 +68,7 @@ RUN set -eux; \
         cat /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
     # Create CLI wrapper using tee (FOSS best practice for Dockerfiles)
-    tee /usr/bin/tuxedo-control-center > /dev/null << 'EOF'
+    tee /usr/bin/tuxedo-control-center > /dev/null <<'EOF'
 #!/bin/bash
 exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
