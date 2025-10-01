@@ -2,6 +2,8 @@
 FROM ghcr.io/ublue-os/bazzite-deck-gnome:latest
 ENV LANG=C.UTF-8
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# Minimize DNF footprint and skip multilib pulls
+RUN echo 'exclude=*.i686' >> /etc/dnf/dnf.conf &&     echo 'tsflags=nodocs' >> /etc/dnf/dnf.conf
 # Add TUXEDO official repo and setup GPG key
 RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
@@ -20,47 +22,46 @@ RUN set -eux; \
     depmod -a "${KVER}" || true
 # Install TCC - move to /usr/lib for ostree compatibility
 RUN set -eux; \
-    if [ -L /opt ]; then rm /opt; mkdir -p /opt; elif [ ! -d /opt ]; then mkdir -p /opt; fi; \
+    if [ -L /opt ]; then \
+        rm /opt; \
+        mkdir -p /opt; \
+    elif [ ! -d /opt ]; then \
+        mkdir -p /opt; \
+    fi; \
     dnf -y install tuxedo-control-center && dnf -y clean all; \
-    if [ ! -d /opt/tuxedo-control-center ]; then echo "ERROR: TCC not installed"; rpm -ql tuxedo-control-center || true; exit 1; fi; \
+    if [ ! -d /opt/tuxedo-control-center ]; then \
+        echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
+        rpm -ql tuxedo-control-center || true; \
+        exit 1; \
+    fi; \
     mkdir -p /usr/lib/tuxedo-control-center; \
     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
+    rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}
+' > /usr/lib/tuxedo-control-center/.build-version; \
     rm -rf /opt/tuxedo-control-center; \
     mkdir -p /var/opt; \
-    ln -sf /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
+    ln -sfn /usr/lib/tuxedo-control-center /opt/tuxedo-control-center; \
+    ln -sfn /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
     if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
-        sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
+        sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
     fi; \
     for service_file in /etc/systemd/system/tccd*.service; do \
-        if [ -f "$service_file" ]; then sed -i 's|/opt/tuxedo-control-center|/usr/lib/tuxedo-control-center|g' "$service_file"; fi; \
+        if [ -f "$service_file" ]; then \
+            sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' "$service_file"; \
+        fi; \
     done; \
     systemctl enable tccd.service 2>/dev/null || true; \
     systemctl enable tccd-sleep.service 2>/dev/null || true; \
-    # Verify service files exist and show their contents \
-    echo "=== Checking tccd service files ==="; \
-    ls -la /etc/systemd/system/tccd*.service || echo "No service files found in /etc/systemd/system"; \
-    for svc in /etc/systemd/system/tccd*.service; do \
-        if [ -f "$svc" ]; then \
-            echo "--- Content of $svc ---"; \
-            cat "$svc"; \
-        fi; \
-    done; \
-    # Also check if services are in /usr/lib/systemd/system \
-    ls -la /usr/lib/systemd/system/tccd*.service 2>/dev/null || echo "No service files in /usr/lib/systemd/system"; \
-    # Verify the tccd binary exists and is executable \
-    echo "=== Checking tccd binary ==="; \
-    ls -la /usr/lib/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd || echo "tccd binary not found"; \
-    # Check symlinks \
-    echo "=== Checking symlinks ==="; \
-    ls -la /opt/tuxedo-control-center || echo "/opt symlink missing"; \
-    ls -la /var/opt/tuxedo-control-center || echo "/var/opt symlink missing"; \
-    echo "✅ TCC installed to /usr/lib/tuxedo-control-center with tccd service enabled"
-# Create CLI wrapper
-RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'WRAPPER'
+    echo "✅ TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt"
+# Create CLI wrapper for consistent launch behavior
+RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
-exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
-WRAPPER
+# Launch TCC - pass all arguments through
+exec /opt/tuxedo-control-center/tuxedo-control-center "$@"
+EOF
+RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 # Verify tuxedo-drivers installation
+
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
     echo "Checking modules for kernel: ${KVER}"; \
