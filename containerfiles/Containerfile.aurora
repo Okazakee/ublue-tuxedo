@@ -53,17 +53,17 @@ RUN set -eux; \
     systemctl enable tccd.service 2>/dev/null || true; \
     systemctl enable tccd-sleep.service 2>/dev/null || true; \
     mkdir -p /usr/share/selinux/policy/modules/cil/200; \
-    cat <<'EOF' > /usr/share/selinux/policy/modules/cil/200/tccd-execmem.cil
-(policy_module tccd_execmem 1.0.0)
-
-(require
-    (type tccd_t)
-    (type init_t)
-    (class process (execmem))
-)
-
-(allow tccd_t init_t (process (execmem)))
-EOF
+    printf '%s\n' \
+        '(policy_module tccd_execmem 1.0.0)' \
+        '' \
+        '(require' \
+        '    (type tccd_t)' \
+        '    (type init_t)' \
+        '    (class process (execmem))' \
+        ')' \
+        '' \
+        '(allow tccd_t init_t (process (execmem)))' \
+    > /usr/share/selinux/policy/modules/cil/200/tccd-execmem.cil; \
     semodule -s targeted -i /usr/share/selinux/policy/modules/cil/200/tccd-execmem.cil || true; \
     echo "✅ TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt"
 # Create CLI wrapper for consistent launch behavior
