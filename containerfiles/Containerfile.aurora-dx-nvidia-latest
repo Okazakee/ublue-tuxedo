@@ -21,21 +21,44 @@ RUN set -eux; \
     echo "Building DKMS modules for ${KVER}"; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
-# Install TCC - stage to /usr/lib, keep runtime mounts
-RUN set -eux;     # Capture RPM version for diagnostics     FEDORA_VER=$(rpm -E '%{fedora}');     if [ -z "${FEDORA_VER}" ]; then         echo "Unable to evaluate Fedora version";         exit 1;     fi;     # Ensure mutable paths exist     if [ -L /opt ]; then         rm /opt;         mkdir -p /opt;     elif [ ! -d /opt ]; then         mkdir -p /opt;     fi;     mkdir -p /var/opt;     # Install TCC from official repo     dnf -y install tuxedo-control-center || {         echo "Failed to install tuxedo-control-center";         exit 1;     };     dnf -y clean all;     # Verify files landed in /opt     if [ ! -d /opt/tuxedo-control-center ]; then         echo "TCC not installed to /opt";         ls -la /opt;         exit 1;     fi;     # Stage immutable copy     rm -rf /usr/lib/tuxedo-control-center;     mkdir -p /usr/lib/tuxedo-control-center;     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/;     rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}
-' > /usr/lib/tuxedo-control-center/.build-version;     # Ensure runtime sees /opt and /var/opt     ln -sfn /usr/lib/tuxedo-control-center /opt/tuxedo-control-center;     ln -sfn /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center;     # Restore desktop file and services to /opt path     if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then         sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop;     fi;     for service_file in /etc/systemd/system/tccd*.service; do         if [ -f "$service_file" ]; then             sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' "$service_file";         fi;     done;     # Drop runtime setup units that populate user config on first boot     cat <<'UNIT' > /etc/systemd/system/tuxedo-control-center-setup.service;     [Unit]     Description=Tuxedo Control Center runtime setup     After=network-online.target     ConditionFirstBoot=yes         [Service]     Type=oneshot     ExecStart=/usr/lib/tuxedo-control-center/runtime-setup.sh     RemainAfterExit=yes         [Install]     WantedBy=multi-user.target     UNIT;     chmod 644 /etc/systemd/system/tuxedo-control-center-setup.service;     systemctl enable tuxedo-control-center-setup.service;     echo "✅ TCC staged to /usr/lib and runtime setup unit installed"
+# Install TCC - move to /usr/lib for ostree compatibility
+RUN set -eux; \
+    if [ -L /opt ]; then \
+        rm /opt; \
+        mkdir -p /opt; \
+    elif [ ! -d /opt ]; then \
+        mkdir -p /opt; \
+    fi; \
+    dnf -y install tuxedo-control-center && dnf -y clean all; \
+    if [ ! -d /opt/tuxedo-control-center ]; then \
+        echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
+        rpm -ql tuxedo-control-center || true; \
+        exit 1; \
+    fi; \
+    mkdir -p /usr/lib/tuxedo-control-center; \
+    cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
+    rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}\n' > /usr/lib/tuxedo-control-center/.build-version; \
+    rm -rf /opt/tuxedo-control-center; \
+    mkdir -p /var/opt; \
+    ln -sfn /usr/lib/tuxedo-control-center /opt/tuxedo-control-center; \
+    ln -sfn /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
+    if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
+        sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
+    fi; \
+    for service_file in /etc/systemd/system/tccd*.service; do \
+        if [ -f "$service_file" ]; then \
+            sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' "$service_file"; \
+        fi; \
+    done; \
+    systemctl enable tccd.service 2>/dev/null || true; \
+    systemctl enable tccd-sleep.service 2>/dev/null || true; \
+    echo "✅ TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt"
 # Create CLI wrapper for consistent launch behavior
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
+# Launch TCC - pass all arguments through
 exec /opt/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
-
-RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
-#!/bin/bash
-# Launch TCC - pass all arguments through
-exec /usr/lib/tuxedo-control-center/tuxedo-control-center "$@"
-EOF
-RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 # Verify tuxedo-drivers installation
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \

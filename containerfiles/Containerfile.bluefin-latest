@@ -37,8 +37,7 @@ RUN set -eux; \
     fi; \
     mkdir -p /usr/lib/tuxedo-control-center; \
     cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
-    rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}
-' > /usr/lib/tuxedo-control-center/.build-version; \
+    rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}\n' > /usr/lib/tuxedo-control-center/.build-version; \
     rm -rf /opt/tuxedo-control-center; \
     mkdir -p /var/opt; \
     ln -sfn /usr/lib/tuxedo-control-center /opt/tuxedo-control-center; \
@@ -60,7 +59,6 @@ RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 # Launch TCC - pass all arguments through
 exec /opt/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
-RUN echo "✅ TCC installed to /usr/lib/tuxedo-control-center"
 # Verify tuxedo-drivers installation
 
 RUN set -eux; \
