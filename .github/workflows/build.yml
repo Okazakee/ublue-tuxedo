@@ -293,6 +293,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
+      - name: Free disk space for Docker
+        run: |
+          sudo rm -rf /var/lib/docker
+          sudo systemctl restart docker
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
