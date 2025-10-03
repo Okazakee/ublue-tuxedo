@@ -75,7 +75,7 @@ jobs:
           - variant: aurora-dx-stable
             containerfile: containerfiles/Containerfile.aurora-dx-stable
             base_image: ghcr.io/ublue-os/aurora-dx:stable
-            tag:stable
+            tag: stable
             image_name: okazakee/aurora-tuxedo-dx
             description: "Aurora DX Stable with Tuxedo drivers and TCC"
           - variant: aurora-nvidia-stable
