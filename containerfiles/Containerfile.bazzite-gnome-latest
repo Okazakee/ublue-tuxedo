@@ -26,7 +26,7 @@ COPY scripts/install-tcc-with-selinux-fix.sh /tmp/install-tcc.sh
 
 # Install TCC with enhanced SELinux support for V8 runtime
 RUN chmod +x /tmp/install-tcc.sh && /tmp/install-tcc.sh && rm /tmp/install-tcc.sh
-    echo "✅ TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt"
+# TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt
 # Create CLI wrapper for consistent launch behavior
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
 #!/bin/bash
