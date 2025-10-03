@@ -244,27 +244,18 @@ sudo rpm-ostree kargs --append-if-missing acpi.ec_no_wakeup=1
 
 ## Secure Boot Setup
 
-The image supports two Secure Boot paths:
-
-### 1. Aurora Key Path (Preferred)
-
-If you're using the Aurora base image, modules may be signed with Aurora's keys:
+The `setup-secureboot` script automatically handles Secure Boot setup with two fallback paths:
 
 ```bash
 sudo /usr/bin/setup-secureboot
 ```
 
-The script will detect if Aurora keys are available and trusted.
+The script will:
 
-### 2. MOK Enrollment (Fallback)
+1. **First**: Attempt to use Aurora keys (if available and trusted)
+2. **Fallback**: Use MOK enrollment with hardcoded password "tuxedo"
 
-If Aurora keys aren't available, use MOK enrollment:
-
-```bash
-sudo /usr/bin/setup-secureboot
-```
-
-The script will automatically import the MOK certificate with the hardcoded password "tuxedo". During reboot, select "Enroll MOK" and enter the password: **tuxedo**.
+During MOK enrollment at boot, select "Enroll MOK" and enter the password: **tuxedo**.
 
 ## Verification
 
