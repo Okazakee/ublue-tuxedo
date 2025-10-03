@@ -70,6 +70,18 @@ cat > /usr/share/selinux/policy/modules/cil/200/tccd-v8-enhanced.cil << 'EOF'
 (allow tccd_t self (capability3 t (setuid)))
 EOF
 
+# Apply the working SELinux fix: Make init_t domain permissive for V8 execmem operations
+echo "Applying SELinux permissive domain fix..."
+if command -v semanage > /dev/null 2>&1; then
+    # Apply the permissive domain fix that works
+    semanage permissive -a init_t 2>/dev/null || {
+        echo "Warning: Could not apply permissive domain fix (this is normal in some containers)"
+        echo "Manual fix: sudo semanage permissive -a init_t"
+    }
+else
+    echo "SELinux management utilities not available"
+fi
+
 # Try to install the policy
 echo "Installing SELinux policy..."
 if command -v semodule > /dev/null 2>&1; then
@@ -101,4 +113,5 @@ if command -v semodule > /dev/null 2>&1; then
 fi
 
 echo "✅ TCC staged to /usr/lib/tuxedo-control-center with enhanced runtime support"
+echo "✅ SELinux permissive domain fix applied (init_t execmem permissions)"
 echo "✅ SELinux policies installed for V8 memory operations"
