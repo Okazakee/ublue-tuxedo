@@ -76,6 +76,7 @@ Supports **Aurora** (KDE Plasma), **Bluefin** (GNOME), and **Bazzite** (Gaming/D
 
 - **Official Tuxedo Support**: Uses the official Tuxedo Fedora repository
 - **Pre-built Kernel Modules**: DKMS modules built and installed during image creation
+- **Enhanced TCC Installation**: SELinux-compatible Tuxedo Control Center with V8 memory policy fixes
 - **Secure Boot Support**: Aurora key path with MOK enrollment fallback
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
 - **Smart CI**: Checks all base images (Aurora, Bluefin, Bazzite) and only builds when updates are available
@@ -279,6 +280,9 @@ lsmod | grep tuxedo
 
 # Launch Tuxedo Control Center
 tuxedo-control-center
+
+# Check TCC service status (should be running)
+systemctl status tccd.service
 ```
 
 ## Troubleshooting
@@ -345,6 +349,41 @@ The image includes a systemd-sleep hook that reinitializes Tuxedo modules on res
    sudo modprobe -r tuxedo_keyboard tuxedo_io
    sudo modprobe tuxedo_keyboard tuxedo_io
    ```
+
+</details>
+
+<details>
+<summary><h3 style="display: inline;">🖥️ TCC Service Issues</h3></summary>
+
+The TCC daemon (`tccd.service`) includes SELinux fixes for V8 JavaScript runtime compatibility. If the service fails:
+
+1. Check service status:
+
+   ```bash
+   systemctl status tccd.service --lines=10
+   ```
+
+2. If service shows "Failed with result 'core-dump'" or "signal=ILL":
+
+   ```bash
+   # This image includes enhanced SELinux policies to prevent this
+   # The service may need a restart after initial boot
+   sudo systemctl restart tccd.service
+   ```
+
+3. Check SELinux context (if supported):
+
+   ```bash
+   ls -Z /opt/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd
+   ```
+
+4. Manual service start for testing:
+
+   ```bash
+   sudo /opt/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd --start
+   ```
+
+**Note**: This image includes targeted SELinux policies that resolve the V8 memory permission issues causing TCC crashes.
 
 </details>
 
@@ -431,13 +470,15 @@ Common build process for all variants:
 
 1. **Repository Setup**: Official Tuxedo Fedora repository
 2. **Package Installation**: TCC, drivers, DKMS, build dependencies
-3. **Module Building**: DKMS autoinstall with proper module placement
-4. **System Integration**: modules-load.d and systemd-sleep hooks
-5. **Overlay Files**: Additional configuration files
+3. **Enhanced TCC Installation**: SELinux-compatible installation with V8 memory policies
+4. **Module Building**: DKMS autoinstall with proper module placement
+5. **System Integration**: modules-load.d and systemd-sleep hooks
+6. **Overlay Files**: Additional configuration files
 
 ### Key Components
 
 - **Tuxedo Control Center**: GUI for fan control, brightness, keyboard backlight
+- **Enhanced TCC Installation**: Script with comprehensive SELinux policies for V8 JavaScript runtime
 - **Tuxedo Drivers**: Kernel modules for hardware control
 - **DKMS**: Dynamic Kernel Module Support for automatic rebuilding
 - **Secure Boot**: Module signing with Aurora keys or MOK enrollment
