@@ -1,4 +1,4 @@
-name: Build and Push NVIDIA Latest Tuxedo Images
+name: Build and Push Bazzite NVIDIA Latest Tuxedo Images
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
       - "docs/**"
       - "*.md"
   schedule:
-    - cron: "0 2 */2 * *" # Every 2 days at 2 AM UTC
+    - cron: "0 2 * * 0" # Every Sunday at 2 AM UTC
   workflow_dispatch:
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora-nvidia:latest ghcr.io/ublue-os/aurora-dx-nvidia:latest ghcr.io/ublue-os/bluefin-nvidia:latest ghcr.io/ublue-os/bluefin-dx-nvidia:latest ghcr.io/ublue-os/bazzite-nvidia:latest ghcr.io/ublue-os/bazzite-nvidia-open:latest ghcr.io/ublue-os/bazzite-deck-nvidia:latest ghcr.io/ublue-os/bazzite-gnome-nvidia:latest ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bazzite-nvidia:latest ghcr.io/ublue-os/bazzite-nvidia-open:latest ghcr.io/ublue-os/bazzite-deck-nvidia:latest ghcr.io/ublue-os/bazzite-gnome-nvidia:latest ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest
 
   build-and-test:
     needs: check-base-images
@@ -51,35 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [aurora-nvidia-latest, aurora-dx-nvidia-latest, bluefin-nvidia-latest, bluefin-dx-nvidia-latest, bazzite-nvidia-latest, bazzite-nvidia-open-latest, bazzite-deck-nvidia-latest, bazzite-gnome-nvidia-latest, bazzite-gnome-nvidia-open-latest, bazzite-deck-nvidia-gnome-latest]
+        variant: [bazzite-nvidia-latest, bazzite-nvidia-open-latest, bazzite-deck-nvidia-latest, bazzite-gnome-nvidia-latest, bazzite-gnome-nvidia-open-latest, bazzite-deck-nvidia-gnome-latest]
         include:
-          # Aurora NVIDIA variants
-          - variant: aurora-nvidia-latest
-            containerfile: containerfiles/Containerfile.aurora-nvidia-latest
-            base_image: ghcr.io/ublue-os/aurora-nvidia:latest
-            tag: latest
-            image_name: okazakee/aurora-nvidia-tuxedo
-            description: "Aurora NVIDIA Latest with Tuxedo drivers and TCC"
-          - variant: aurora-dx-nvidia-latest
-            containerfile: containerfiles/Containerfile.aurora-dx-nvidia-latest
-            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:latest
-            tag: latest
-            image_name: okazakee/aurora-dx-nvidia-tuxedo
-            description: "Aurora DX NVIDIA Latest with Tuxedo drivers and TCC"
-          # Bluefin NVIDIA variants
-          - variant: bluefin-nvidia-latest
-            containerfile: containerfiles/Containerfile.bluefin-nvidia-latest
-            base_image: ghcr.io/ublue-os/bluefin-nvidia:latest
-            tag: latest
-            image_name: okazakee/bluefin-nvidia-tuxedo
-            description: "Bluefin NVIDIA Latest with Tuxedo drivers and TCC"
-          - variant: bluefin-dx-nvidia-latest
-            containerfile: containerfiles/Containerfile.bluefin-dx-nvidia-latest
-            base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:latest
-            tag: latest
-            image_name: okazakee/bluefin-nvidia-tuxedo-dx
-            description: "Bluefin DX NVIDIA Latest with Tuxedo drivers and TCC"
-          # Bazzite NVIDIA variants
           - variant: bazzite-nvidia-latest
             containerfile: containerfiles/Containerfile.bazzite-nvidia-latest
             base_image: ghcr.io/ublue-os/bazzite-nvidia:latest

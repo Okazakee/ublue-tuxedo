@@ -4,233 +4,103 @@ Universal Blue OCI images with official Tuxedo drivers and TCC (Tuxedo Control C
 
 Supports **Aurora** (KDE Plasma), **Bluefin** (GNOME), and **Bazzite** (Gaming/Desktop/Deck) with stable/latest kernel variants, NVIDIA support, and open-source NVIDIA drivers. **36 total variants available** - the most comprehensive Universal Blue Tuxedo collection!
 
+## Quick Start
+
+### Quick Installation
+
+Choose your preferred desktop environment:
+
+```bash
+# Aurora Stable (KDE Plasma)
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:stable
+
+# Bluefin Stable (GNOME)  
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo:stable
+
+# Bazzite Gaming Stable
+sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-tuxedo:stable
+
+# Reboot to apply
+sudo systemctl reboot
+```
+
+### Additional Variants
+
+📖 **See [Available Images](#available-images) below** for all 36 variants including:
+- **NVIDIA versions** (proprietary/open drivers)
+- **DX versions** (with development tools)  
+- **Latest builds** (newest kernel)
+- **Specialized builds** (Deck, GNOME variants)
+
+💡 **Pro tip:** Replace `:stable` with `:latest` for newest kernel features
+
 ## Available Images
 
-<details open>
-<summary><h3 style="display: inline;">🖥️ Aurora Variants (KDE Plasma Desktop) - 8 variants</h3></summary>
+🖥️ **Aurora (KDE Plasma)** - 8 variants:
+- `aurora-tuxedo:stable/latest` - Base Aurora with gated/newest kernel
+- `aurora-tuxedo-dx:stable/latest` - Dev tools + Aurora  
+- `aurora-nvidia-tuxedo:stable/latest` - NVIDIA drivers + Aurora
+- `aurora-dx-nvidia-tuxedo:stable/latest` - Dev tools + NVIDIA + Aurora
 
-- **aurora-tuxedo:stable** - `ghcr.io/okazakee/aurora-tuxedo:stable` - Gated kernel (weekly updates)
-- **aurora-tuxedo:latest** - `ghcr.io/okazakee/aurora-tuxedo:latest` - Newest kernel
-- **aurora-tuxedo-dx:stable** - `ghcr.io/okazakee/aurora-tuxedo-dx:stable` - Dev tools + gated kernel
-- **aurora-tuxedo-dx:latest** - `ghcr.io/okazakee/aurora-tuxedo-dx:latest` - Dev tools + newest kernel
-- **aurora-nvidia-tuxedo:stable** - `ghcr.io/okazakee/aurora-nvidia-tuxedo:stable` - NVIDIA drivers + gated kernel
-- **aurora-nvidia-tuxedo:latest** - `ghcr.io/okazakee/aurora-nvidia-tuxedo:latest` - NVIDIA drivers + newest kernel
-- **aurora-dx-nvidia-tuxedo:stable** - `ghcr.io/okazakee/aurora-dx-nvidia-tuxedo:stable` - Dev tools + NVIDIA + gated kernel
-- **aurora-dx-nvidia-tuxedo:latest** - `ghcr.io/okazakee/aurora-dx-nvidia-tuxedo:latest` - Dev tools + NVIDIA + newest kernel
+🐧 **Bluefin (GNOME)** - 8 variants:
+- `bluefin-tuxedo:stable/latest` - Base Bluefin with gated/newest kernel
+- `bluefin-tuxedo-dx:stable/latest` - Dev tools + Bluefin
+- `bluefin-nvidia-tuxedo:stable/latest` - NVIDIA drivers + Bluefin  
+- `bluefin-dx-nvidia-tuxedo:stable/latest` - Dev tools + NVIDIA + Bluefin
 
-</details>
+🎮 **Bazzite Regular** - 8 variants:
+- `bazzite-tuxedo:stable/latest` - Gaming KDE Plasma
+- `bazzite-deck-tuxedo:stable/latest` - Steam Deck UI
+- `bazzite-gnome-tuxedo:stable/latest` - GNOME Desktop
+- `bazzite-deck-gnome-tuxedo:stable/latest` - Deck + GNOME
 
-<details>
-<summary><h3 style="display: inline;">🐧 Bluefin Variants (GNOME Desktop) - 8 variants</h3></summary>
+🎯 **Bazzite NVIDIA** - 12 variants:
+- `bazzite-nvidia-tuxedo:stable/latest` - Gaming + NVIDIA
+- `bazzite-nvidia-open-tuxedo:stable/latest` - Gaming + Open NVIDIA
+- `bazzite-deck-nvidia-tuxedo:stable/latest` - Deck + NVIDIA
+- `bazzite-gnome-nvidia-tuxedo:stable/latest` - GNOME + NVIDIA
+- `bazzite-gnome-nvidia-open-tuxedo:stable/latest` - GNOME + Open NVIDIA
+- `bazzite-deck-nvidia-gnome-tuxedo:stable/latest` - Deck + GNOME + NVIDIA
 
-- **bluefin-tuxedo:stable** - `ghcr.io/okazakee/bluefin-tuxedo:stable` - Gated kernel (weekly updates)
-- **bluefin-tuxedo:latest** - `ghcr.io/okazakee/bluefin-tuxedo:latest` - Newest kernel
-- **bluefin-tuxedo-dx:stable** - `ghcr.io/okazakee/bluefin-tuxedo-dx:stable` - Dev tools + gated kernel
-- **bluefin-tuxedo-dx:latest** - `ghcr.io/okazakee/bluefin-tuxedo-dx:latest` - Dev tools + newest kernel
-- **bluefin-nvidia-tuxedo:stable** - `ghcr.io/okazakee/bluefin-nvidia-tuxedo:stable` - NVIDIA drivers + gated kernel
-- **bluefin-nvidia-tuxedo:latest** - `ghcr.io/okazakee/bluefin-nvidia-tuxedo:latest` - NVIDIA drivers + newest kernel
-- **bluefin-dx-nvidia-tuxedo:stable** - `ghcr.io/okazakee/bluefin-dx-nvidia-tuxedo:stable` - Dev tools + NVIDIA + gated kernel
-- **bluefin-dx-nvidia-tuxedo:latest** - `ghcr.io/okazakee/bluefin-dx-nvidia-tuxedo:latest` - Dev tools + NVIDIA + newest kernel
+## Quick Reference URLs
 
-</details>
+Replace `[variant]:stable` with `[variant]:latest` for newest kernel:
 
-<details>
-<summary><h3 style="display: inline;">🎮 Bazzite Gaming Variants (KDE Plasma) - 6 variants</h3></summary>
+**Aurora Family:**
+- Base: `ghcr.io/okazakee/aurora-tuxedo:stable`
+- DX: `ghcr.io/okazakee/aurora-tuxedo-dx:stable`  
+- NVIDIA: `ghcr.io/okazakee/aurora-nvidia-tuxedo:stable`
+- DX NVIDIA: `ghcr.io/okazakee/aurora-dx-nvidia-tuxedo:stable`
 
-- **bazzite-tuxedo:stable** - `ghcr.io/okazakee/bazzite-tuxedo:stable` - Gaming-optimized with gated kernel
-- **bazzite-tuxedo:latest** - `ghcr.io/okazakee/bazzite-tuxedo:latest` - Gaming-optimized with newest kernel
-- **bazzite-nvidia-tuxedo:stable** - `ghcr.io/okazakee/bazzite-nvidia-tuxedo:stable` - Gaming + NVIDIA proprietary + gated kernel
-- **bazzite-nvidia-tuxedo:latest** - `ghcr.io/okazakee/bazzite-nvidia-tuxedo:latest` - Gaming + NVIDIA proprietary + newest kernel
-- **bazzite-nvidia-open-tuxedo:stable** - `ghcr.io/okazakee/bazzite-nvidia-open-tuxedo:stable` - Gaming + NVIDIA open + gated kernel
-- **bazzite-nvidia-open-tuxedo:latest** - `ghcr.io/okazakee/bazzite-nvidia-open-tuxedo:latest` - Gaming + NVIDIA open + newest kernel
+**Bluefin Family:**
+- Base: `ghcr.io/okazakee/bluefin-tuxedo:stable`
+- DX: `ghcr.io/okazakee/bluefin-tuxedo-dx:stable`
+- NVIDIA: `ghcr.io/okazakee/bluefin-nvidia-tuxedo:stable`
+- DX NVIDIA: `ghcr.io/okazakee/bluefin-dx-nvidia-tuxedo:stable`
 
-</details>
+**Bazzite Regular Family:**
+- Gaming: `ghcr.io/okazakee/bazzite-tuxedo:stable`
+- Deck: `ghcr.io/okazakee/bazzite-deck-tuxedo:stable`
+- GNOME: `ghcr.io/okazakee/bazzite-gnome-tuxedo:stable`
+- Deck GNOME: `ghcr.io/okazakee/bazzite-deck-gnome-tuxedo:stable`
 
-<details>
-<summary><h3 style="display: inline;">🌐 Bazzite GNOME Variants (Desktop) - 6 variants</h3></summary>
-
-- **bazzite-gnome-tuxedo:stable** - `ghcr.io/okazakee/bazzite-gnome-tuxedo:stable` - GNOME desktop + gated kernel
-- **bazzite-gnome-tuxedo:latest** - `ghcr.io/okazakee/bazzite-gnome-tuxedo:latest` - GNOME desktop + newest kernel
-- **bazzite-gnome-nvidia-tuxedo:stable** - `ghcr.io/okazakee/bazzite-gnome-nvidia-tuxedo:stable` - GNOME + NVIDIA proprietary + gated kernel
-- **bazzite-gnome-nvidia-tuxedo:latest** - `ghcr.io/okazakee/bazzite-gnome-nvidia-tuxedo:latest` - GNOME + NVIDIA proprietary + newest kernel
-- **bazzite-gnome-nvidia-open-tuxedo:stable** - `ghcr.io/okazakee/bazzite-gnome-nvidia-open-tuxedo:stable` - GNOME + NVIDIA open + gated kernel
-- **bazzite-gnome-nvidia-open-tuxedo:latest** - `ghcr.io/okazakee/bazzite-gnome-nvidia-open-tuxedo:latest` - GNOME + NVIDIA open + newest kernel
-
-</details>
-
-<details>
-<summary><h3 style="display: inline;">🎯 Bazzite Deck Variants (Steam Deck UI) - 8 variants</h3></summary>
-
-- **bazzite-deck-tuxedo:stable** - `ghcr.io/okazakee/bazzite-deck-tuxedo:stable` - Steam Deck UI + gated kernel
-- **bazzite-deck-tuxedo:latest** - `ghcr.io/okazakee/bazzite-deck-tuxedo:latest` - Steam Deck UI + newest kernel
-- **bazzite-deck-nvidia-tuxedo:stable** - `ghcr.io/okazakee/bazzite-deck-nvidia-tuxedo:stable` - Deck UI + NVIDIA + gated kernel
-- **bazzite-deck-nvidia-tuxedo:latest** - `ghcr.io/okazakee/bazzite-deck-nvidia-tuxedo:latest` - Deck UI + NVIDIA + newest kernel
-- **bazzite-deck-gnome-tuxedo:stable** - `ghcr.io/okazakee/bazzite-deck-gnome-tuxedo:stable` - Deck UI + GNOME + gated kernel
-- **bazzite-deck-gnome-tuxedo:latest** - `ghcr.io/okazakee/bazzite-deck-gnome-tuxedo:latest` - Deck UI + GNOME + newest kernel
-- **bazzite-deck-nvidia-gnome-tuxedo:stable** - `ghcr.io/okazakee/bazzite-deck-nvidia-gnome-tuxedo:stable` - Deck UI + GNOME + NVIDIA + gated kernel
-- **bazzite-deck-nvidia-gnome-tuxedo:latest** - `ghcr.io/okazakee/bazzite-deck-nvidia-gnome-tuxedo:latest` - Deck UI + GNOME + NVIDIA + newest kernel
-
-</details>
+**Bazzite NVIDIA Family:**
+- NVIDIA Gaming: `ghcr.io/okazakee/bazzite-nvidia-tuxedo:stable`
+- NVIDIA Open Gaming: `ghcr.io/okazakee/bazzite-nvidia-open-tuxedo:stable`
+- NVIDIA Deck: `ghcr.io/okazakee/bazzite-deck-nvidia-tuxedo:stable`
+- NVIDIA GNOME: `ghcr.io/okazakee/bazzite-gnome-nvidia-tuxedo:stable`
+- NVIDIA Open GNOME: `ghcr.io/okazakee/bazzite-gnome-nvidia-open-tuxedo:stable`
+- NVIDIA Deck GNOME: `ghcr.io/okazakee/bazzite-deck-nvidia-gnome-tuxedo:stable`
 
 ## Features
 
 - **Official Tuxedo Support**: Uses the official Tuxedo Fedora repository
 - **Pre-built Kernel Modules**: DKMS modules built and installed during image creation
 - **Enhanced TCC Installation**: SELinux-compatible Tuxedo Control Center with V8 memory policy fixes
-- **Secure Boot Support**: Aurora key path with MOK enrollment fallback
+- **Secure Boot Support**: Direct MOK enrollment with secure key management
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
 - **Smart CI**: Checks all base images (Aurora, Bluefin, Bazzite) and only builds when updates are available
 - **Multi-Variant Support**: Aurora, Bluefin, and Bazzite with stable/latest variants
-
-## Quick Start
-
-### Rebasing to Tuxedo Images
-
-Choose your preferred desktop environment and variant:
-
-<details>
-<summary><h4 style="display: inline;">🖥️ Aurora (KDE Plasma Desktop)</h4></summary>
-
-```bash
-# Stable (Recommended)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:stable
-
-# Latest (Newest features)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo:latest
-
-# DX Stable (Dev tools + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo-dx:stable
-
-# DX Latest (Dev tools + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-tuxedo-dx:latest
-
-# NVIDIA Stable (NVIDIA drivers + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-nvidia-tuxedo:stable
-
-# NVIDIA Latest (NVIDIA drivers + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-nvidia-tuxedo:latest
-
-# DX NVIDIA Stable (Dev tools + NVIDIA + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-dx-nvidia-tuxedo:stable
-
-# DX NVIDIA Latest (Dev tools + NVIDIA + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/aurora-dx-nvidia-tuxedo:latest
-
-# Reboot to apply
-sudo systemctl reboot
-```
-
-</details>
-
-<details>
-<summary><h4 style="display: inline;">🐧 Bluefin (GNOME Desktop)</h4></summary>
-
-```bash
-# Stable (Recommended)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo:stable
-
-# Latest (Newest features)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo:latest
-
-# DX Stable (Dev tools + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo-dx:stable
-
-# DX Latest (Dev tools + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-tuxedo-dx:latest
-
-# NVIDIA Stable (NVIDIA drivers + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-nvidia-tuxedo:stable
-
-# NVIDIA Latest (NVIDIA drivers + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-nvidia-tuxedo:latest
-
-# DX NVIDIA Stable (Dev tools + NVIDIA + stable kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-dx-nvidia-tuxedo:stable
-
-# DX NVIDIA Latest (Dev tools + NVIDIA + newest kernel)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bluefin-dx-nvidia-tuxedo:latest
-
-# Reboot to apply
-sudo systemctl reboot
-```
-
-</details>
-
-<details>
-<summary><h4 style="display: inline;">🎮 Bazzite (Gaming & Desktop)</h4></summary>
-
-```bash
-# === GAMING VARIANTS (KDE Plasma - Gaming Focused) ===
-
-# Stable (Recommended)
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-tuxedo:stable
-
-# Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-tuxedo:latest
-
-# NVIDIA Proprietary Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-nvidia-tuxedo:stable
-
-# NVIDIA Proprietary Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-nvidia-tuxedo:latest
-
-# NVIDIA Open-Source Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-nvidia-open-tuxedo:stable
-
-# NVIDIA Open-Source Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-nvidia-open-tuxedo:latest
-
-# === GNOME VARIANTS (Desktop Experience) ===
-
-# GNOME Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-tuxedo:stable
-
-# GNOME Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-tuxedo:latest
-
-# GNOME + NVIDIA Proprietary Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-nvidia-tuxedo:stable
-
-# GNOME + NVIDIA Proprietary Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-nvidia-tuxedo:latest
-
-# GNOME + NVIDIA Open Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-nvidia-open-tuxedo:stable
-
-# GNOME + NVIDIA Open Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-gnome-nvidia-open-tuxedo:latest
-
-# === DECK VARIANTS (Steam Deck Experience) ===
-
-# Deck Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-tuxedo:stable
-
-# Deck Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-tuxedo:latest
-
-# Deck + NVIDIA Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-nvidia-tuxedo:stable
-
-# Deck + NVIDIA Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-nvidia-tuxedo:latest
-
-# Deck + GNOME Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-gnome-tuxedo:stable
-
-# Deck + GNOME Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-gnome-tuxedo:latest
-
-# Deck + NVIDIA + GNOME Stable
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-nvidia-gnome-tuxedo:stable
-
-# Deck + NVIDIA + GNOME Latest
-sudo rpm-ostree rebase ostree-image-signed:docker://ghcr.io/okazakee/bazzite-deck-nvidia-gnome-tuxedo:latest
-
-# Reboot to apply
-sudo systemctl reboot
-```
-
-</details>
 
 ### Add Recommended Kernel Arguments
 
@@ -253,9 +123,9 @@ sudo /usr/bin/setup-secureboot
 The script will:
 
 1. **First**: Attempt to use Aurora keys (if available and trusted)
-2. **Fallback**: Use MOK enrollment with hardcoded password "tuxedo"
+2. **Simplified Approach**: Direct MOK enrollment only
 
-During MOK enrollment at boot, select "Enroll MOK" and enter the password: **tuxedo**.
+MOK certificates are embedded in all images for secure module signing.
 
 ## Verification
 
@@ -431,8 +301,8 @@ The build process now includes the proven patterns from [BrickMan240's PR #6](ht
 
 - **Writable Build Location**: Copies DKMS sources to `/tmp/tuxedo-drivers-build` to avoid immutable filesystem issues
 - **Explicit Module Installation**: Uses `make modules_install` to ensure modules are properly placed
-- **MOK Signing**: Generates MOK keys during build for Secure Boot compatibility
-- **Hardcoded Password**: Uses "tuxedo" as the MOK enrollment password for seamless setup
+- **Secure Key Management**: MOK keys stored securely in GitHub Secrets and embedded during build
+- **Automated Setup**: One-time MOK enrollment with persistent module signing across updates
 
 ## CI/CD
 
@@ -472,7 +342,7 @@ Common build process for all variants:
 - **Enhanced TCC Installation**: Script with comprehensive SELinux policies for V8 JavaScript runtime
 - **Tuxedo Drivers**: Kernel modules for hardware control
 - **DKMS**: Dynamic Kernel Module Support for automatic rebuilding
-- **Secure Boot**: Module signing with Aurora keys or MOK enrollment
+- **Secure Boot**: Module signing with MOK enrollment (simplified)
 
 ## Contributing
 

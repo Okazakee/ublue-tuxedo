@@ -25,7 +25,6 @@ The tccd service was failing with **Illegal Instruction (signal=ILL)** errors du
 
 #### New Files:
 - `scripts/install-tcc-with-selinux-fix.sh` - Enhanced TCC installation with SELinux fix
-- `scripts/bulk-update-containerfiles.sh` - Automated containerfile updates
 - `overlay/usr/share/selinux/policy/modules/cil/200/tccd-v8-allow.cil` - Base SELinux policy file
 
 #### Modified Files:

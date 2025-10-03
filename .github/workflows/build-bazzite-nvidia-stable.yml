@@ -1,4 +1,4 @@
-name: Build and Push NVIDIA Stable Tuxedo Images
+name: Build and Push Bazzite NVIDIA Stable Tuxedo Images
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora-nvidia:stable ghcr.io/ublue-os/aurora-dx-nvidia:stable ghcr.io/ublue-os/bluefin-nvidia:stable ghcr.io/ublue-os/bluefin-dx-nvidia:stable ghcr.io/ublue-os/bazzite-nvidia:stable ghcr.io/ublue-os/bazzite-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bazzite-nvidia:stable ghcr.io/ublue-os/bazzite-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable
 
   build-and-test:
     needs: check-base-images
@@ -51,35 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [aurora-nvidia-stable, aurora-dx-nvidia-stable, bluefin-nvidia-stable, bluefin-dx-nvidia-stable, bazzite-nvidia-stable, bazzite-nvidia-open-stable, bazzite-deck-nvidia-stable, bazzite-gnome-nvidia-stable, bazzite-gnome-nvidia-open-stable, bazzite-deck-nvidia-gnome-stable]
+        variant: [bazzite-nvidia-stable, bazzite-nvidia-open-stable, bazzite-deck-nvidia-stable, bazzite-gnome-nvidia-stable, bazzite-gnome-nvidia-open-stable, bazzite-deck-nvidia-gnome-stable]
         include:
-          # Aurora NVIDIA variants
-          - variant: aurora-nvidia-stable
-            containerfile: containerfiles/Containerfile.aurora-nvidia
-            base_image: ghcr.io/ublue-os/aurora-nvidia:stable
-            tag: stable
-            image_name: okazakee/aurora-nvidia-tuxedo
-            description: "Aurora NVIDIA Stable with Tuxedo drivers and TCC"
-          - variant: aurora-dx-nvidia-stable
-            containerfile: containerfiles/Containerfile.aurora-dx-nvidia
-            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:stable
-            tag: stable
-            image_name: okazakee/aurora-dx-nvidia-tuxedo
-            description: "Aurora DX NVIDIA Stable with Tuxedo drivers and TCC "
-          # Bluefin NVIDIA variants
-          - variant: bluefin-nvidia-stable
-            containerfile: containerfiles/Containerfile.bluefin-nvidia
-            base_image: ghcr.io/ublue-os/bluefin-nvidia:stable
-            tag: stable
-            image_name: okazakee/bluefin-nvidia-tuxedo
-            description: "Bluefin NVIDIA Stable with Tuxedo drivers and TCC"
-          - variant: bluefin-dx-nvidia-stable
-            containerfile: containerfiles/Containerfile.bluefin-dx-nvidia
-            base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:stable
-            tag: stable
-            image_name: okazakee/bluefin-nvidia-tuxedo-dx
-            description: "Bluefin DX NVIDIA Stable with Tuxedo drivers and TCC"
-          # Bazzite NVIDIA variants
           - variant: bazzite-nvidia-stable
             containerfile: containerfiles/Containerfile.bazzite-nvidia
             base_image: ghcr.io/ublue-os/bazzite-nvidia:stable

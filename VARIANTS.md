@@ -20,31 +20,24 @@ This document lists all 36 image variants built by this repository.
 | `bluefin-nvidia-tuxedo`    | stable, latest | `ghcr.io/ublue-os/bluefin-nvidia`    |
 | `bluefin-dx-nvidia-tuxedo` | stable, latest | `ghcr.io/ublue-os/bluefin-dx-nvidia` |
 
-## Bazzite (Gaming/Desktop/Deck) - 20 variants
+## Bazzite Regular (Gaming/Desktop/Deck) - 8 variants
 
-### Gaming (KDE Plasma - Gaming Focused) - 6 variants
+| Package Name              | Variants       | Base Image                          |
+| ------------------------- | -------------- | ----------------------------------- |
+| `bazzite-tuxedo`          | stable, latest | `ghcr.io/ublue-os/bazzite`          |
+| `bazzite-deck-tuxedo`     | stable, latest | `ghcr.io/ublue-os/bazzite-deck`     |
+| `bazzite-gnome-tuxedo`    | stable, latest | `ghcr.io/ublue-os/bazzite-gnome`    |
+| `bazzite-deck-gnome-tuxedo` | stable, latest | `ghcr.io/ublue-os/bazzite-deck-gnome` |
 
-| Package Name                 | Variants       | Base Image                             |
-| ---------------------------- | -------------- | -------------------------------------- |
-| `bazzite-tuxedo`             | stable, latest | `ghcr.io/ublue-os/bazzite`             |
-| `bazzite-nvidia-tuxedo`      | stable, latest | `ghcr.io/ublue-os/bazzite-nvidia`      |
-| `bazzite-nvidia-open-tuxedo` | stable, latest | `ghcr.io/ublue-os/bazzite-nvidia-open` |
-
-### GNOME (Desktop Experience) - 6 variants
+## Bazzite NVIDIA (Gaming/Desktop/Deck) - 12 variants
 
 | Package Name                       | Variants       | Base Image                                   |
 | ---------------------------------- | -------------- | -------------------------------------------- |
-| `bazzite-gnome-tuxedo`             | stable, latest | `ghcr.io/ublue-os/bazzite-gnome`             |
+| `bazzite-nvidia-tuxedo`            | stable, latest | `ghcr.io/ublue-os/bazzite-nvidia`           |
+| `bazzite-nvidia-open-tuxedo`       | stable, latest | `ghcr.io/ublue-os/bazzite-nvidia-open`         |
+| `bazzite-deck-nvidia-tuxedo`       | stable, latest | `ghcr.io/ublue-os/bazzite-deck-nvidia`       |
 | `bazzite-gnome-nvidia-tuxedo`      | stable, latest | `ghcr.io/ublue-os/bazzite-gnome-nvidia`      |
 | `bazzite-gnome-nvidia-open-tuxedo` | stable, latest | `ghcr.io/ublue-os/bazzite-gnome-nvidia-open` |
-
-### Deck (Steam Deck Experience) - 8 variants
-
-| Package Name                       | Variants       | Base Image                                   |
-| ---------------------------------- | -------------- | -------------------------------------------- |
-| `bazzite-deck-tuxedo`              | stable, latest | `ghcr.io/ublue-os/bazzite-deck`              |
-| `bazzite-deck-nvidia-tuxedo`       | stable, latest | `ghcr.io/ublue-os/bazzite-deck-nvidia`       |
-| `bazzite-deck-gnome-tuxedo`        | stable, latest | `ghcr.io/ublue-os/bazzite-deck-gnome`        |
 | `bazzite-deck-nvidia-gnome-tuxedo` | stable, latest | `ghcr.io/ublue-os/bazzite-deck-nvidia-gnome` |
 
 ---
@@ -54,6 +47,13 @@ This document lists all 36 image variants built by this repository.
 - **36 Containerfiles** (image variants with stable/latest tags)
 - **18 GitHub Packages** (each package contains stable + latest tags)
 - **36 Base Images** tracked for automated updates
+
+### Breakdown:
+- **Aurora**: 8 variants (4 packages × 2 tags)
+- **Bluefin**: 8 variants (4 packages × 2 tags)  
+- **Bazzite Regular**: 8 variants (4 packages × 2 tags)
+- **Bazzite NVIDIA**: 12 variants (6 packages × 2 tags)
+- **Total**: 36 variants (18 packages × 2 tags)
 
 ## Package vs Variant Terminology
 

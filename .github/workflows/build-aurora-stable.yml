@@ -49,7 +49,7 @@ jobs:
         env:
           TUF_ROOT: ${{ secrets.TUF_ROOT }}
         run: |
-          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:stable ghcr.io/ublue-os/aurora-dx:stable
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:stable ghcr.io/ublue-os/aurora-dx:stable ghcr.io/ublue-os/aurora-nvidia:stable ghcr.io/ublue-os/aurora-dx-nvidia:stable
 
       - name: Debug outputs
         if: always()
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [aurora-stable, aurora-dx-stable]
+        variant: [aurora-stable, aurora-dx-stable, aurora-nvidia-stable, aurora-dx-nvidia-stable]
         include:
           - variant: aurora-stable
             containerfile: containerfiles/Containerfile.aurora
@@ -75,9 +75,21 @@ jobs:
           - variant: aurora-dx-stable
             containerfile: containerfiles/Containerfile.aurora-dx-stable
             base_image: ghcr.io/ublue-os/aurora-dx:stable
-            tag: stable
+            tag:stable
             image_name: okazakee/aurora-tuxedo-dx
             description: "Aurora DX Stable with Tuxedo drivers and TCC"
+          - variant: aurora-nvidia-stable
+            containerfile: containerfiles/Containerfile.aurora-nvidia
+            base_image: ghcr.io/ublue-os/aurora-nvidia:stable
+            tag: stable
+            image_name: okazakee/aurora-nvidia-tuxedo
+            description: "Aurora NVIDIA Stable with Tuxedo drivers and TCC"
+          - variant: aurora-dx-nvidia-stable
+            containerfile: containerfiles/Containerfile.aurora-dx-nvidia
+            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:stable
+            tag: stable
+            image_name: okazakee/aurora-dx-nvidia-tuxedo
+            description: "Aurora DX NVIDIA Stable with Tuxedo drivers and TCC"
 
     steps:
       - name: Checkout repository

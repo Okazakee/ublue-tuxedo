@@ -45,7 +45,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:latest ghcr.io/ublue-os/aurora-dx:latest
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:latest ghcr.io/ublue-os/aurora-dx:latest ghcr.io/ublue-os/aurora-nvidia:latest ghcr.io/ublue-os/aurora-dx-nvidia:latest
 
   build-and-test:
     needs: check-base-images
@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [aurora-latest, aurora-dx-latest]
+        variant: [aurora-latest, aurora-dx-latest, aurora-nvidia-latest, aurora-dx-nvidia-latest]
         include:
           - variant: aurora-latest
             containerfile: containerfiles/Containerfile.aurora-latest
@@ -67,6 +67,18 @@ jobs:
             tag: latest
             image_name: okazakee/aurora-tuxedo-dx
             description: "Aurora DX Latest with Tuxedo drivers and TCC"
+          - variant: aurora-nvidia-latest
+            containerfile: containerfiles/Containerfile.aurora-nvidia-latest
+            base_image: ghcr.io/ublue-os/aurora-nvidia:latest
+            tag: latest
+            image_name: okazakee/aurora-nvidia-tuxedo
+            description: "Aurora NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: aurora-dx-nvidia-latest
+            containerfile: containerfiles/Containerfile.aurora-dx-nvidia-latest
+            base_image: ghcr.io/ublue-os/aurora-dx-nvidia:latest
+            tag: latest
+            image_name: okazakee/aurora-dx-nvidia-tuxedo
+            description: "Aurora DX NVIDIA Latest with Tuxedo drivers and TCC"
 
     steps:
       - name: Checkout repository

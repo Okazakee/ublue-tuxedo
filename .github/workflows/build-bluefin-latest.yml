@@ -43,7 +43,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bluefin:latest ghcr.io/ublue-os/bluefin-dx:latest
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bluefin:latest ghcr.io/ublue-os/bluefin-dx:latest ghcr.io/ublue-os/bluefin-nvidia:latest ghcr.io/ublue-os/bluefin-dx-nvidia:latest
 
   build-and-test:
     needs: check-base-images
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant: [bluefin-latest, bluefin-dx-latest]
+        variant: [bluefin-latest, bluefin-dx-latest, bluefin-nvidia-latest, bluefin-dx-nvidia-latest]
         include:
           - variant: bluefin-latest
             containerfile: containerfiles/Containerfile.bluefin-latest
@@ -65,6 +65,18 @@ jobs:
             tag: latest
             image_name: okazakee/bluefin-tuxedo-dx
             description: "Bluefin DX Latest with Tuxedo drivers and TCC"
+          - variant: bluefin-nvidia-latest
+            containerfile: containerfiles/Containerfile.bluefin-nvidia-latest
+            base_image: ghcr.io/ublue-os/bluefin-nvidia:latest
+            tag: latest
+            image_name: okazakee/bluefin-nvidia-tuxedo
+            description: "Bluefin NVIDIA Latest with Tuxedo drivers and TCC"
+          - variant: bluefin-dx-nvidia-latest
+            containerfile: containerfiles/Containerfile.bluefin-dx-nvidia-latest
+            base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:latest
+            tag: latest
+            image_name: okazakee/bluefin-nvidia-tuxedo-dx
+            description: "Bluefin DX NVIDIA Latest with Tuxedo drivers and TCC"
 
     steps:
       - name: Checkout repository
