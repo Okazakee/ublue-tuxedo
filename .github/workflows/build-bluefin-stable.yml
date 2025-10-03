@@ -80,6 +80,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
+      - name: Extract MOK Certificates from Secrets
+        run: |
+          mkdir -p overlay/usr/share/aurora-tuxedo/mok/
+          echo "${{ secrets.MOK_PRIVATE_KEY }}" > overlay/usr/share/aurora-tuxedo/mok/MOK.key
+          echo "${{ secrets.MOK_CERTIFICATE_PEM }}" > overlay/usr/share/aurora-tuxedo/mok/MOK.crt
+          echo "${{ secrets.MOK_CERTIFICATE_DER }}" | base64 -d > overlay/usr/share/aurora-tuxedo/mok/MOK.der
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5

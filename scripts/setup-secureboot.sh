@@ -39,14 +39,7 @@ check_secure_boot() {
     return 1
 }
 
-check_aurora_keys() {
-    # Check if Aurora signing keys are available and trusted
-    if [ -d "/usr/share/aurora-tuxedo/aurora-keys" ]; then
-        log_info "Aurora signing keys found"
-        return 0
-    fi
-    return 1
-}
+# Aurora key check removed - using direct MOK enrollment only
 
 import_mok_certificate() {
     local cert_file="$1"
@@ -70,18 +63,7 @@ import_mok_certificate() {
     fi
 }
 
-setup_aurora_keys() {
-    log_info "Setting up Aurora key path for Secure Boot"
-    
-    if check_aurora_keys; then
-        log_success "Aurora keys are available and should be trusted by the system"
-        log_info "Modules should load without MOK enrollment"
-        return 0
-    else
-        log_warning "Aurora keys not found, falling back to MOK enrollment"
-        return 1
-    fi
-}
+# Aurora keys setup removed - using direct MOK enrollment only
 
 setup_mok_enrollment() {
     log_info "Setting up MOK enrollment for Secure Boot"
@@ -114,8 +96,8 @@ setup_mok_enrollment() {
 }
 
 main() {
-    log_info "Aurora Tuxedo Secure Boot Setup"
-    log_info "================================="
+    log_info "Tuxedo Secure Boot Setup"
+    log_info "========================="
     
     # Check if running as root
     if [ "$EUID" -ne 0 ]; then
@@ -131,15 +113,9 @@ main() {
     fi
     
     log_info "Secure Boot is enabled"
+    log_info "Setting up MOK enrollment for Tuxedo modules"
     
-    # Try Aurora key path first
-    if setup_aurora_keys; then
-        log_success "Aurora key path configured successfully"
-        exit 0
-    fi
-    
-    # Fall back to MOK enrollment
-    log_info "Falling back to MOK enrollment"
+    # Direct MOK enrollment (no fallback complexity)
     if setup_mok_enrollment; then
         log_success "MOK enrollment setup completed"
         log_warning "Please reboot to complete the enrollment process"
@@ -152,17 +128,19 @@ main() {
 # Show usage if help requested
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << EOF
-Aurora Tuxedo Secure Boot Setup
+Tuxedo Secure Boot Setup
 
-This script configures Secure Boot for Tuxedo kernel modules.
-It supports two paths:
-1. Aurora key path (preferred) - uses Aurora's signing keys
-2. MOK enrollment (fallback) - enrolls a custom key via MOK
+This script configures Secure Boot for Tuxedo kernel modules by enrolling
+a Machine Owner Key (MOK) certificate for module signing.
 
 Usage: $0 [--help]
 
-The script will automatically detect the best available path and guide you
-through the setup process.
+Process:
+1. Checks if Secure Boot is enabled
+2. Imports MOK certificate automatically 
+3. Provides reboot instructions to complete enrollment
+
+The certificate is included with pre-built Tuxedo images.
 
 EOF
     exit 0
