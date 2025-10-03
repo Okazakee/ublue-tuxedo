@@ -6,6 +6,7 @@ set -euo pipefail
 
 # Parse command line arguments
 FILTER_PATTERN=""
+SPECIFIC_IMAGES=()
 DIGEST_FILE=".base-image-digests"
 
 while [[ $# -gt 0 ]]; do
@@ -13,6 +14,14 @@ while [[ $# -gt 0 ]]; do
     --filter)
       FILTER_PATTERN="$2"
       shift 2
+      ;;
+    --images)
+      SHIFT_COUNT=0
+      while [[ $((2 + SHIFT_COUNT)) -le $# ]] && [[ ${@:$(($2 + SHIFT_COUNT + 1)):1} != --* ]]; do
+        SPECIFIC_IMAGES+=("${@:$(($2 + SHIFT_COUNT + 1)):1}")
+        ((SHIFT_COUNT++))
+      done
+      shift $((2 + SHIFT_COUNT))
       ;;
     --digest-file)
       DIGEST_FILE="$2"
@@ -69,8 +78,14 @@ ALL_BASE_IMAGES=(
     "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest"
 )
 
-# Filter base images if pattern provided
-if [ -n "$FILTER_PATTERN" ]; then
+# Determine which images to check
+if [ ${#SPECIFIC_IMAGES[@]} -gt 0 ]; then
+    log_info() {
+        echo "[INFO] $1"
+    }
+    log_info "Checking specific images: ${SPECIFIC_IMAGES[*]}"
+    BASE_IMAGES=("${SPECIFIC_IMAGES[@]}")
+elif [ -n "$FILTER_PATTERN" ]; then
     log_info() {
         echo "[INFO] $1"
     }
@@ -308,6 +323,7 @@ Usage: $0 [OPTIONS]
 
 Options:
   --filter PATTERN    Only check images matching the pattern (e.g., "aurora", "bazzite-nvidia")
+  --images IMAGE1 IMAGE2 ... Specify exact images to check (preferred for workflows)
   --digest-file FILE  Use custom digest file (default: .base-image-digests)
   --help, -h          Show this help message
 
@@ -316,6 +332,7 @@ Examples:
   $0 --filter aurora                   # Only check aurora images
   $0 --filter bazzite-nvidia           # Only check bazzite nvidia images
   $0 --filter stable                   # Only check stable variant images
+  $0 --images ghcr.io/ublue-os/aurora:stable ghcr.io/ublue-os/aurora-dx:stable
 
 The script will:
 1. Fetch the current digests of base images (filtered if pattern provided)

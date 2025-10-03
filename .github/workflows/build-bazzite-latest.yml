@@ -33,7 +33,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --filter bazzite
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bazzite:latest ghcr.io/ublue-os/bazzite-deck:latest ghcr.io/ublue-os/bazzite-gnome:latest ghcr.io/ublue-os/bazzite-deck-gnome:latest
 
   build-and-test:
     needs: check-base-images

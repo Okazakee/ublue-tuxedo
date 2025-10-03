@@ -41,7 +41,7 @@ jobs:
         env:
           TUF_ROOT: ${{ secrets.TUF_ROOT }}
         run: |
-          bash scripts/check-base-images.sh --filter aurora
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:stable ghcr.io/ublue-os/aurora-dx:stable
 
       - name: Debug outputs
         if: always()

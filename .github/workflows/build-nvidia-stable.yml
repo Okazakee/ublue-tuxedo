@@ -33,7 +33,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --filter nvidia
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora-nvidia:stable ghcr.io/ublue-os/aurora-dx-nvidia:stable ghcr.io/ublue-os/bluefin-nvidia:stable ghcr.io/ublue-os/bluefin-dx-nvidia:stable ghcr.io/ublue-os/bazzite-nvidia:stable ghcr.io/ublue-os/bazzite-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia:stable ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable
 
   build-and-test:
     needs: check-base-images

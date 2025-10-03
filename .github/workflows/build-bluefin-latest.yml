@@ -33,7 +33,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --filter bluefin
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/bluefin:latest ghcr.io/ublue-os/bluefin-dx:latest
 
   build-and-test:
     needs: check-base-images

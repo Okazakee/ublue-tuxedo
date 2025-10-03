@@ -35,7 +35,7 @@ jobs:
       - name: Check base image digests
         id: check
         run: |
-          bash scripts/check-base-images.sh --filter aurora
+          bash scripts/check-base-images.sh --images ghcr.io/ublue-os/aurora:latest ghcr.io/ublue-os/aurora-dx:latest
 
   build-and-test:
     needs: check-base-images
