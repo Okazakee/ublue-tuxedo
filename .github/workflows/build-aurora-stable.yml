@@ -77,6 +77,9 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
 
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
       - name: Sign with Cosign
         env:
           TUF_ROOT: ${{ secrets.TUF_ROOT }}
