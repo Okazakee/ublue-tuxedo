@@ -2,19 +2,17 @@ name: Build and Push Aurora Stable Tuxedo Images
 
 on:
   push:
+    branches: [main, master]
     paths-ignore:
       - "README.md"
       - "docs/**"
       - "*.md"
   pull_request:
+    branches: [main, master]
     paths-ignore:
       - "README.md"
       - "docs/**"
       - "*.md"
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
   schedule:
     - cron: "0 2 * * 0" # Every Sunday at 2 AM UTC
   workflow_dispatch:
