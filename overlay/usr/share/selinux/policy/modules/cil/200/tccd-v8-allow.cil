@@ -1,0 +1,29 @@
+;; Enhanced SELinux policy for TCC V8/Node.js runtime
+(policy_module tccd_v8_allow 1.0.0)
+
+(require
+    (type tccd_t)
+    (type init_t)
+    (type mnt_t)
+    (type dev_t)
+    (class process (execmem execmod execstack heap))
+    (class capability (setuid))
+)
+
+;; Allow V8 to modify memory permissions for JIT compilation
+(allow tccd_t init_t (process (execmem)))
+(allow tccd_t tccd_t (process (execstack)))
+(allow tccd_t tccd_t (process (heap)))
+
+;; Allow accessing memory mapping interfaces
+(allow tccd_t self (capability (setuid)))
+
+;; Allow device access for hardware monitoring
+(allow tccd_t dev_t (filesystem (getattr read)))
+
+;; Allow mount operations for tmpfs/ramfs (V8 uses these)
+(allow tccd_t mnt_t (filesystem (getattr read)))
+
+;; Additional V8 runtime permissions
+(allow tccd_t self (process (execmod)))
+(allow tccd_t self (process (mmap)))

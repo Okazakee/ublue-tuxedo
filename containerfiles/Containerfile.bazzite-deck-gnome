@@ -20,50 +20,11 @@ RUN set -eux; \
     echo "Building DKMS modules for ${KVER}"; \
     dkms autoinstall -k "${KVER}" || true; \
     depmod -a "${KVER}" || true
-# Install TCC - move to /usr/lib for ostree compatibility
-RUN set -eux; \
-    if [ -L /opt ]; then \
-        rm /opt; \
-        mkdir -p /opt; \
-    elif [ ! -d /opt ]; then \
-        mkdir -p /opt; \
-    fi; \
-    dnf -y install tuxedo-control-center && dnf -y clean all; \
-    if [ ! -d /opt/tuxedo-control-center ]; then \
-        echo "ERROR: TCC not installed to /opt/tuxedo-control-center"; \
-        rpm -ql tuxedo-control-center || true; \
-        exit 1; \
-    fi; \
-    mkdir -p /usr/lib/tuxedo-control-center; \
-    cp -a /opt/tuxedo-control-center/. /usr/lib/tuxedo-control-center/; \
-    rpm -q tuxedo-control-center --qf '%{VERSION}-%{RELEASE}\n' > /usr/lib/tuxedo-control-center/.build-version; \
-    rm -rf /opt/tuxedo-control-center; \
-    mkdir -p /var/opt; \
-    ln -sfn /usr/lib/tuxedo-control-center /opt/tuxedo-control-center; \
-    ln -sfn /usr/lib/tuxedo-control-center /var/opt/tuxedo-control-center; \
-    if [ -f /usr/share/applications/tuxedo-control-center.desktop ]; then \
-        sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' /usr/share/applications/tuxedo-control-center.desktop; \
-    fi; \
-    for service_file in /etc/systemd/system/tccd*.service; do \
-        if [ -f "$service_file" ]; then \
-            sed -i 's|/usr/lib/tuxedo-control-center|/opt/tuxedo-control-center|g' "$service_file"; \
-        fi; \
-    done; \
-    systemctl enable tccd.service 2>/dev/null || true; \
-    systemctl enable tccd-sleep.service 2>/dev/null || true; \
-    mkdir -p /usr/share/selinux/policy/modules/cil/200; \
-    printf '%s\n' \
-        '(policy_module tccd_execmem 1.0.0)' \
-        '' \
-        '(require' \
-        '    (type tccd_t)' \
-        '    (type init_t)' \
-        '    (class process (execmem))' \
-        ')' \
-        '' \
-        '(allow tccd_t init_t (process (execmem)))' \
-    > /usr/share/selinux/policy/modules/cil/200/tccd-execmem.cil; \
-    semodule -s targeted -i /usr/share/selinux/policy/modules/cil/200/tccd-execmem.cil || true; \
+# Copy enhanced TCC installation script
+COPY scripts/install-tcc-with-selinux-fix.sh /tmp/install-tcc.sh
+
+# Install TCC with enhanced SELinux support for V8 runtime
+RUN chmod +x /tmp/install-tcc.sh && /tmp/install-tcc.sh && rm /tmp/install-tcc.sh
     echo "✅ TCC staged to /usr/lib/tuxedo-control-center with runtime symlinks to /opt"
 # Create CLI wrapper for consistent launch behavior
 RUN install -m 755 /dev/stdin /usr/bin/tuxedo-control-center <<'EOF'
