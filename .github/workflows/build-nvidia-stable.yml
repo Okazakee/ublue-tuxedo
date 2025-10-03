@@ -14,11 +14,35 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  check-base-images:
+    runs-on: ubuntu-latest
+    outputs:
+      skip_all: ${{ steps.check.outputs.skip_all }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Check base image digests
+        id: check
+        run: |
+          bash scripts/check-base-images.sh --filter nvidia
+
   build-and-test:
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all == 'false'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant:
+        variant: [aurora-nvidia-stable, aurora-dx-nvidia-stable, bluefin-nvidia-stable, bluefin-dx-nvidia-stable, bazzite-nvidia-stable, bazzite-nvidia-open-stable, bazzite-deck-nvidia-stable, bazzite-gnome-nvidia-stable, bazzite-gnome-nvidia-open-stable, bazzite-deck-nvidia-gnome-stable]
+        include:
           # Aurora NVIDIA variants
           - variant: aurora-nvidia-stable
             containerfile: containerfiles/Containerfile.aurora-nvidia
@@ -31,7 +55,7 @@ jobs:
             base_image: ghcr.io/ublue-os/aurora-dx-nvidia:stable
             tag: stable
             image_name: okazakee/aurora-dx-nvidia-tuxedo
-            description: "Aurora DX NVIDIA Stable with Tuxedo drivers and TCC"
+            description: "Aurora DX NVIDIA Stable with Tuxedo drivers and TCC "
           # Bluefin NVIDIA variants
           - variant: bluefin-nvidia-stable
             containerfile: containerfiles/Containerfile.bluefin-nvidia

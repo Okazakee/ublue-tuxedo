@@ -14,11 +14,35 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  check-base-images:
+    runs-on: ubuntu-latest
+    outputs:
+      skip_all: ${{ steps.check.outputs.skip_all }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Check base image digests
+        id: check
+        run: |
+          bash scripts/check-base-images.sh --filter bluefin
+
   build-and-test:
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all == 'false'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant:
+        variant: [bluefin-latest, bluefin-dx-latest]
+        include:
           - variant: bluefin-latest
             containerfile: containerfiles/Containerfile.bluefin-latest
             base_image: ghcr.io/ublue-os/bluefin:latest

@@ -14,11 +14,35 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  check-base-images:
+    runs-on: ubuntu-latest
+    outputs:
+      skip_all: ${{ steps.check.outputs.skip_all }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Check base image digests
+        id: check
+        run: |
+          bash scripts/check-base-images.sh --filter nvidia
+
   build-and-test:
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all == 'false'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant:
+        variant: [aurora-nvidia-latest, aurora-dx-nvidia-latest, bluefin-nvidia-latest, bluefin-dx-nvidia-latest, bazzite-nvidia-latest, bazzite-nvidia-open-latest, bazzite-deck-nvidia-latest, bazzite-gnome-nvidia-latest, bazzite-gnome-nvidia-open-latest, bazzite-deck-nvidia-gnome-latest]
+        include:
           # Aurora NVIDIA variants
           - variant: aurora-nvidia-latest
             containerfile: containerfiles/Containerfile.aurora-nvidia-latest

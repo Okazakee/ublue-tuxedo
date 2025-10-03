@@ -4,8 +4,33 @@
 
 set -euo pipefail
 
-# Base images to check
-BASE_IMAGES=(
+# Parse command line arguments
+FILTER_PATTERN=""
+DIGEST_FILE=".base-image-digests"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --filter)
+      FILTER_PATTERN="$2"
+      shift 2
+      ;;
+    --digest-file)
+      DIGEST_FILE="$2"
+      shift 2
+      ;;
+    --help|-h)
+      SHOW_HELP=true
+      shift
+      ;;
+    *)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
+# Define all base images
+ALL_BASE_IMAGES=(
     "ghcr.io/ublue-os/aurora:stable"
     "ghcr.io/ublue-os/aurora:latest"
     "ghcr.io/ublue-os/aurora-dx:stable"
@@ -44,7 +69,22 @@ BASE_IMAGES=(
     "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest"
 )
 
-DIGEST_FILE=".base-image-digests"
+# Filter base images if pattern provided
+if [ -n "$FILTER_PATTERN" ]; then
+    log_info() {
+        echo "[INFO] $1"
+    }
+    log_info "Filtering images with pattern: $FILTER_PATTERN"
+    
+    BASE_IMAGES=()
+    for image in "${ALL_BASE_IMAGES[@]}"; do
+        if [[ "$image" == *"$FILTER_PATTERN"* ]]; then
+            BASE_IMAGES+=("$image")
+        fi
+    done
+else
+    BASE_IMAGES=("${ALL_BASE_IMAGES[@]}")
+fi
 
 log_info() {
     echo "[INFO] $1"
@@ -257,23 +297,34 @@ main() {
 }
 
 # Show usage if help requested
-if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+if [ "${SHOW_HELP:-false}" = "true" ]; then
     cat << EOF
 Check Universal Blue Base Image Digests
 
 This script checks if any Universal Blue base image digest has changed
 and updates the digest file if needed.
 
-Usage: $0 [--help]
+Usage: $0 [OPTIONS]
+
+Options:
+  --filter PATTERN    Only check images matching the pattern (e.g., "aurora", "bazzite-nvidia")
+  --digest-file FILE  Use custom digest file (default: .base-image-digests)
+  --help, -h          Show this help message
+
+Examples:
+  $0                                    # Check all base images
+  $0 --filter aurora                   # Only check aurora images
+  $0 --filter bazzite-nvidia           # Only check bazzite nvidia images
+  $0 --filter stable                   # Only check stable variant images
 
 The script will:
-1. Fetch the current digests of all base images (Aurora, Bluefin, Bazzite)
+1. Fetch the current digests of base images (filtered if pattern provided)
 2. Compare them with the stored digests in .base-image-digests
 3. Update the digest file if any have changed
 4. Set GitHub Actions output 'skip_build' accordingly
 
-Base images checked:
-$(printf '  - %s\n' "${BASE_IMAGES[@]}")
+All available base images:
+$(printf '  - %s\n' "${ALL_BASE_IMAGES[@]}")
 
 EOF
     exit 0

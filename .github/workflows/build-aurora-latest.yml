@@ -14,11 +14,37 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  check-base-images:
+    runs-on: ubuntu-latest
+    outputs:
+      skip_all: ${{ steps.check.outputs.skip_all }}
+      build_aurora_latest: ${{ steps.check.outputs.build_aurora_latest }}
+      build_aurora_dx_latest: ${{ steps.check.outputs.build_aurora_dx_latest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Check base image digests
+        id: check
+        run: |
+          bash scripts/check-base-images.sh --filter aurora
+
   build-and-test:
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all == 'false'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        variant:
+        variant: [aurora-latest, aurora-dx-latest]
+        include:
           - variant: aurora-latest
             containerfile: containerfiles/Containerfile.aurora-latest
             base_image: ghcr.io/ublue-os/aurora:latest
