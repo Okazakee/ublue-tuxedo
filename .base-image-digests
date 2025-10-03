@@ -1,0 +1,4 @@
+[INFO] Fetching digest for ghcr.io/ublue-os/aurora-nvidia:latest
+[INFO] Fetching digest for ghcr.io/ublue-os/bazzite-nvidia:latest
+ghcr.io/ublue-os/aurora-nvidia:latest=sha256:007739256ae6eb6d25570aedb9daecc8104aa86f0f698c9d6cee5f75a91f513e
+ghcr.io/ublue-os/bazzite-nvidia:latest=sha256:92236abd1c230fb9904c5b69babc963af35fabb9d583ec3842639b040c46a6ae

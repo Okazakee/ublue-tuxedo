@@ -16,12 +16,12 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --images)
-      SHIFT_COUNT=0
-      while [[ $((2 + SHIFT_COUNT)) -le $# ]] && [[ ${@:$(($2 + SHIFT_COUNT + 1)):1} != --* ]]; do
-        SPECIFIC_IMAGES+=("${@:$(($2 + SHIFT_COUNT + 1)):1}")
-        ((SHIFT_COUNT++))
+      shift  # Remove --images
+      # Collect all arguments until next --option or end
+      while [[ $# -gt 0 ]] && [[ $1 != --* ]]; do
+        SPECIFIC_IMAGES+=("$1")
+        shift
       done
-      shift $((2 + SHIFT_COUNT))
       ;;
     --digest-file)
       DIGEST_FILE="$2"
