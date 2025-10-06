@@ -48,7 +48,7 @@ jobs:
 
   build-and-test:
     needs: check-base-images
-    if: github.event_name == 'push' || (needs.check-base-images.outputs.skip_all == 'false')
+    if: always() && (github.event_name == 'push' || (needs.check-base-images.outputs.skip_all == 'false'))
     runs-on: ubuntu-latest
     strategy:
       matrix:
