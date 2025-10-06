@@ -46,8 +46,7 @@ RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d
 COPY overlay/ /
 # Sign Tuxedo kernel modules with MOK key
 RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}
-' | tail -1); \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
     KEY="/usr/share/aurora-tuxedo/mok/MOK.key"; \
     CRT="/usr/share/aurora-tuxedo/mok/MOK.crt"; \
     DER="/usr/share/aurora-tuxedo/mok/MOK.der"; \

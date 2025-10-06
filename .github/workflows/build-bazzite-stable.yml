@@ -26,6 +26,7 @@ env:
 jobs:
   check-base-images:
     runs-on: ubuntu-latest
+    if: github.event_name != 'push'
     outputs:
       skip_all: ${{ steps.check.outputs.skip_all }}
     steps:
@@ -47,7 +48,7 @@ jobs:
 
   build-and-test:
     needs: check-base-images
-    if: needs.check-base-images.outputs.skip_all == 'false'
+    if: github.event_name == 'push' || (needs.check-base-images.outputs.skip_all == 'false')
     runs-on: ubuntu-latest
     strategy:
       matrix:
