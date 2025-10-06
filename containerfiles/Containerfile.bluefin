@@ -55,7 +55,7 @@ RUN set -eux; \
     DER="/usr/share/aurora-tuxedo/mok/MOK.der"; \
     if [ -f "$KEY" ] && [ -f "$DER" ]; then \
       if command -v kmodsign >/dev/null 2>&1; then \
-        find "/lib/modules/${KVER}" -type f ( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' ) -print0 | while IFS= read -r -d '' mod; do \
+        find "/lib/modules/${KVER}" -type f \( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' \) -print0 | while IFS= read -r -d '' mod; do \
           kmodsign sha256 "$KEY" "$DER" "$mod" || true; \
         done; \
       elif [ -x "/usr/src/kernels/${KVER}/scripts/sign-file" ]; then \
