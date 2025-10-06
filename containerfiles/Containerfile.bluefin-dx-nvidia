@@ -48,6 +48,29 @@ RUN set -eux; \
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
 # Copy overlay files
 COPY overlay/ /
+# Sign Tuxedo kernel modules with MOK key
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    KEY="/usr/share/aurora-tuxedo/mok/MOK.key"; \
+    CRT="/usr/share/aurora-tuxedo/mok/MOK.crt"; \
+    DER="/usr/share/aurora-tuxedo/mok/MOK.der"; \
+    if [ -f "$KEY" ] && [ -f "$DER" ]; then \
+      SIGN_TOOL=""; \
+      if [ -x "/usr/src/kernels/${KVER}/scripts/sign-file" ]; then \
+        SIGN_TOOL="/usr/src/kernels/${KVER}/scripts/sign-file"; \
+      elif command -v kmodsign >/dev/null 2>&1; then \
+        SIGN_TOOL="$(command -v kmodsign)"; \
+      fi; \
+      if [ -n "$SIGN_TOOL" ]; then \
+        find "/lib/modules/${KVER}" -type f \( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' \) | while read -r mod; do \
+          case "$SIGN_TOOL" in \
+            */sign-file) "$SIGN_TOOL" sha256 "$KEY" "$CRT" "$mod" || true ;; \
+            *) "$SIGN_TOOL" sha256 "$KEY" "$DER" "$mod" || true ;; \
+          esac; \
+        done; \
+        depmod -a "${KVER}" || true; \
+      fi; \
+    fi
 # Copy setup script
 COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
 RUN chmod +x /usr/bin/setup-secureboot
