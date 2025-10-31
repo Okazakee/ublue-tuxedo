@@ -11,19 +11,28 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
-# Install kernel headers first, then drivers so DKMS can build modules during installation
+# Install kernel headers and DKMS first, then install tuxedo-drivers without running post-install scriptlets
+# We'll manually build modules later for the correct kernel
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1) && \
     dnf -y install "kernel-devel-${KVER}" || dnf -y install kernel-devel && \
     dnf -y install kernel-headers 2>/dev/null || true && \
-    dnf -y install tuxedo-drivers && \
+    dnf -y install dkms && \
+    dnf -y install tuxedo-drivers --setopt=tsflags=noscripts && \
     dnf -y clean all
 # Build DKMS modules for the installed kernel inside the image
+# Manually add tuxedo-drivers to DKMS since we skipped the post-install scriptlet
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
-    echo "Building DKMS modules for ${KVER}"; \
-    dkms autoinstall -k "${KVER}" || true; \
-    depmod -a "${KVER}" || true
+    echo "Adding tuxedo-drivers to DKMS for kernel ${KVER}"; \
+    if [ -d "/usr/src/tuxedo-drivers" ] && [ -d "/usr/src/kernels/${KVER}" ]; then \
+        dkms add tuxedo-drivers/4.17.0 -k "${KVER}" || true; \
+        echo "Building DKMS modules for ${KVER}"; \
+        dkms autoinstall -k "${KVER}" || true; \
+        depmod -a "${KVER}" || true; \
+    else \
+        echo "Warning: DKMS sources or kernel headers not found, skipping module build"; \
+    fi
 # Copy enhanced TCC installation script
 COPY scripts/install-tcc-with-selinux-fix.sh /tmp/install-tcc.sh
 
