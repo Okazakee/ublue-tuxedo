@@ -95,6 +95,59 @@ setup_mok_enrollment() {
     fi
 }
 
+sign_modules() {
+    local kernel_version="${1:-$(uname -r)}"
+    
+    log_info "Signing Tuxedo modules for kernel: ${kernel_version}"
+    
+    local KEY="${MOK_DIR}/MOK.key"
+    local DER="${MOK_DIR}/MOK.der"
+    local CRT="${MOK_DIR}/MOK.crt"
+    
+    if [ ! -f "$KEY" ] || [ ! -f "$DER" ]; then
+        log_error "MOK keys not found in ${MOK_DIR}"
+        return 1
+    fi
+    
+    local modules_dir="/lib/modules/${kernel_version}"
+    if [ ! -d "$modules_dir" ]; then
+        log_warning "Kernel modules directory not found: ${modules_dir}"
+        return 1
+    fi
+    
+    local signed_count=0
+    
+    # Sign modules using kmodsign (preferred)
+    if command -v kmodsign >/dev/null 2>&1; then
+        while IFS= read -r -d '' mod; do
+            if kmodsign sha256 "$KEY" "$DER" "$mod" 2>/dev/null; then
+                ((signed_count++))
+                log_info "Signed: $(basename "$mod")"
+            fi
+        done < <(find "$modules_dir" -type f \( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' \) -print0 2>/dev/null || true)
+    # Fallback to sign-file script
+    elif [ -x "/usr/src/kernels/${kernel_version}/scripts/sign-file" ]; then
+        while IFS= read -r -d '' mod; do
+            if "/usr/src/kernels/${kernel_version}/scripts/sign-file" sha256 "$KEY" "$CRT" "$mod" 2>/dev/null; then
+                ((signed_count++))
+                log_info "Signed: $(basename "$mod")"
+            fi
+        done < <(find "$modules_dir" -type f -name 'tuxedo*.ko' -print0 2>/dev/null || true)
+    else
+        log_error "No signing tool available (kmodsign or sign-file)"
+        return 1
+    fi
+    
+    if [ $signed_count -gt 0 ]; then
+        log_success "Successfully signed ${signed_count} module(s)"
+        depmod -a "${kernel_version}" 2>/dev/null || true
+        return 0
+    else
+        log_warning "No Tuxedo modules found to sign"
+        return 1
+    fi
+}
+
 main() {
     log_info "Tuxedo Secure Boot Setup"
     log_info "========================="
@@ -113,15 +166,24 @@ main() {
     fi
     
     log_info "Secure Boot is enabled"
-    log_info "Setting up MOK enrollment for Tuxedo modules"
     
-    # Direct MOK enrollment (no fallback complexity)
-    if setup_mok_enrollment; then
-        log_success "MOK enrollment setup completed"
-        log_warning "Please reboot to complete the enrollment process"
+    # Check if MOK is already enrolled
+    if mokutil --list-enrolled 2>/dev/null | grep -q "aurora-tuxedo\|MOK"; then
+        log_info "MOK certificate appears to be enrolled"
+        log_info "Signing existing modules..."
+        sign_modules "$(uname -r)"
     else
-        log_error "Failed to setup MOK enrollment"
-        exit 1
+        log_info "Setting up MOK enrollment for Tuxedo modules"
+        
+        # Direct MOK enrollment (no fallback complexity)
+        if setup_mok_enrollment; then
+            log_success "MOK enrollment setup completed"
+            log_warning "Please reboot to complete the enrollment process"
+            log_info "After reboot, modules will be automatically signed"
+        else
+            log_error "Failed to setup MOK enrollment"
+            exit 1
+        fi
     fi
 }
 

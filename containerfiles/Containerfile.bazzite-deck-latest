@@ -11,8 +11,11 @@ RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
     curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
     rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
 # Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
-# Install drivers normally so DKMS builds modules during the build
+# Install kernel headers first, then drivers so DKMS can build modules during installation
 RUN dnf -y upgrade --setopt=install_weak_deps=False && \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1) && \
+    dnf -y install "kernel-devel-${KVER}" || dnf -y install kernel-devel && \
+    dnf -y install kernel-headers 2>/dev/null || true && \
     dnf -y install tuxedo-drivers && \
     dnf -y clean all
 # Build DKMS modules for the installed kernel inside the image
@@ -68,7 +71,16 @@ RUN set -eux; \
     fi
 # Copy setup script
 COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
-RUN chmod +x /usr/bin/setup-secureboot
+COPY scripts/sign-modules.sh /usr/bin/sign-modules.sh
+COPY scripts/dkms-sign-hook.sh /tmp/dkms-sign-hook.sh
+RUN chmod +x /usr/bin/setup-secureboot /usr/bin/sign-modules.sh
+# Setup DKMS hook to auto-sign modules when rebuilt (DKMS calls scripts in post_install.d)
+RUN mkdir -p /etc/dkms/post_install.d && \
+    cp /tmp/dkms-sign-hook.sh /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    chmod +x /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    rm /tmp/dkms-sign-hook.sh
+# Enable module signing service (runs after boot if Secure Boot is enabled)
+RUN systemctl enable sign-tuxedo-modules.service || true
 # Resume hook to re-init keyboard on resume (fixes backlight reinit)
 # File is already copied from overlay with correct permissions
 RUN rm -rf /var/cache/dnf/* /var/tmp/*

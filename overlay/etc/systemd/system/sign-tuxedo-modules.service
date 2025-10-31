@@ -1,0 +1,14 @@
+[Unit]
+Description=Sign Tuxedo Kernel Modules for Secure Boot
+After=multi-user.target
+ConditionPathExists=/usr/share/aurora-tuxedo/mok/MOK.key
+ConditionPathExists=/usr/share/aurora-tuxedo/mok/MOK.der
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/sign-modules.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+
