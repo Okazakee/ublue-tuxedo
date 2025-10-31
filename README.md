@@ -127,6 +127,22 @@ The script will:
 
 MOK certificates are embedded in all images for secure module signing.
 
+### Automatic Kernel Update Handling
+
+**No manual intervention needed after kernel updates!** The system automatically handles module rebuilding and signing:
+
+1. **DKMS Hook**: Automatically rebuilds and signs Tuxedo modules when a new kernel is installed
+2. **Module Loading Service**: Automatically copies signed modules from DKMS to a writable location and loads them
+3. **Kernel Install Trigger**: The `load-tuxedo-modules.service` runs after `kernel-install.service` to ensure modules are ready for the new kernel
+
+**What happens automatically:**
+- After a kernel update, DKMS rebuilds modules for the new kernel
+- Modules are automatically signed with your MOK certificate
+- Modules are copied to `/usr/local/lib/modules/$(uname -r)/extra/` (writable location)
+- Modules are automatically loaded on next boot
+
+**You only need to reboot** - everything else is handled automatically!
+
 ## Verification
 
 After rebasing, verify the installation:

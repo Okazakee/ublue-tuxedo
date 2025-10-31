@@ -31,3 +31,10 @@ RUN set -eux; \
     else \
         echo "Warning: DKMS sources or kernel headers not found, skipping module build"; \
     fi
+# Add MOK certificate to kernel trust so kernel accepts modules signed with our certificate
+COPY scripts/add-mok-to-kernel-trust.sh /tmp/add-mok-to-kernel-trust.sh
+RUN chmod +x /tmp/add-mok-to-kernel-trust.sh && \
+    if [ -f "/usr/share/aurora-tuxedo/mok/MOK.der" ] || [ -f "/usr/share/aurora-tuxedo/mok/MOK.crt" ]; then \
+      /tmp/add-mok-to-kernel-trust.sh || true; \
+    fi && \
+    rm -f /tmp/add-mok-to-kernel-trust.sh

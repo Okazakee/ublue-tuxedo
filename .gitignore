@@ -27,3 +27,9 @@ Thumbs.db
 .cache/
 build/
 dist/
+
+# MOK keys and certificates (sensitive)
+mok-keys/
+
+# GitHub secrets (contains sensitive certificate data)
+GITHUB-SECRETS.md

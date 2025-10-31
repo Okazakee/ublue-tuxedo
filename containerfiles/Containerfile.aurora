@@ -57,7 +57,21 @@ RUN set -eux; \
 # Ensure modules auto-load on boot
 RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf
 # Copy overlay files
+# Add MOK certificate to kernel trust so kernel accepts modules signed with our certificate
+COPY scripts/add-mok-to-kernel-trust.sh /tmp/add-mok-to-kernel-trust.sh
+RUN chmod +x /tmp/add-mok-to-kernel-trust.sh && \
+    if [ -f "/usr/share/aurora-tuxedo/mok/MOK.der" ] || [ -f "/usr/share/aurora-tuxedo/mok/MOK.crt" ]; then \
+      /tmp/add-mok-to-kernel-trust.sh || true; \
+    fi && \
+    rm -f /tmp/add-mok-to-kernel-trust.sh
 COPY overlay/ /
+# Add MOK certificate to kernel trust so kernel accepts modules signed with our certificate
+COPY scripts/add-mok-to-kernel-trust.sh /tmp/add-mok-to-kernel-trust.sh
+RUN chmod +x /tmp/add-mok-to-kernel-trust.sh && \
+    if [ -f "/usr/share/aurora-tuxedo/mok/MOK.der" ] || [ -f "/usr/share/aurora-tuxedo/mok/MOK.crt" ]; then \
+      /tmp/add-mok-to-kernel-trust.sh || true; \
+    fi && \
+    rm -f /tmp/add-mok-to-kernel-trust.sh
 # Sign Tuxedo kernel modules with MOK key
 RUN set -eux; \
     KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \

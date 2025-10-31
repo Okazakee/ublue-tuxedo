@@ -1,0 +1,12 @@
+[Unit]
+Description=Load Tuxedo Kernel Modules for Secure Boot
+After=multi-user.target kernel-install.service
+Wants=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/load-tuxedo-modules.sh
+
+[Install]
+WantedBy=multi-user.target
