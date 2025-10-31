@@ -21,8 +21,7 @@ RUN dnf -y upgrade --setopt=install_weak_deps=False && \
 # Build DKMS modules for the installed kernel inside the image
 # Manually add tuxedo-drivers to DKMS since we skipped the post-install scriptlet
 RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}
-' | tail -1); \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
     echo "Adding tuxedo-drivers to DKMS for kernel ${KVER}"; \
     if [ -d "/usr/src/tuxedo-drivers" ] && [ -d "/usr/src/kernels/${KVER}" ]; then \
         dkms add tuxedo-drivers/4.17.0 -k "${KVER}" || true; \

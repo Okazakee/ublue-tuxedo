@@ -23,7 +23,7 @@ RUN dnf -y upgrade --setopt=install_weak_deps=False && \
 # Build DKMS modules for the installed kernel inside the image
 # Manually add tuxedo-drivers to DKMS since we skipped the post-install scriptlet
 RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
     echo "Adding tuxedo-drivers to DKMS for kernel ${KVER}"; \
     if [ -d "/usr/src/tuxedo-drivers" ] && [ -d "/usr/src/kernels/${KVER}" ]; then \
         dkms add tuxedo-drivers/4.17.0 -k "${KVER}" || true; \
@@ -46,7 +46,7 @@ exec /opt/tuxedo-control-center/tuxedo-control-center "$@"
 EOF
 # Verify tuxedo-drivers installation
 RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
     echo "Checking modules for kernel: ${KVER}"; \
     # List installed tuxedo files
     rpm -ql tuxedo-drivers || echo "tuxedo-drivers package contents not found"; \
@@ -60,7 +60,7 @@ RUN mkdir -p /etc/modules-load.d && echo 'tuxedo_keyboard' > /etc/modules-load.d
 COPY overlay/ /
 # Sign Tuxedo kernel modules with MOK key
 RUN set -eux; \
-    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
     KEY="/usr/share/aurora-tuxedo/mok/MOK.key"; \
     CRT="/usr/share/aurora-tuxedo/mok/MOK.crt"; \
     DER="/usr/share/aurora-tuxedo/mok/MOK.der"; \
