@@ -1,0 +1,224 @@
+# Universal Blue Tuxedo Variant Configuration
+# This file defines all 36 image variants that will be generated from the template
+
+variants:
+  # Aurora (KDE Plasma) - 8 variants
+  - name: aurora
+    base_image: ghcr.io/ublue-os/aurora:stable
+    tags: [stable]
+    description: "Aurora KDE Plasma (stable kernel)"
+    package_name: aurora-tuxedo
+    
+  - name: aurora-latest
+    base_image: ghcr.io/ublue-os/aurora:latest
+    tags: [latest]
+    description: "Aurora KDE Plasma (latest kernel)"
+    package_name: aurora-tuxedo
+    
+  - name: aurora-dx-stable
+    base_image: ghcr.io/ublue-os/aurora-dx:stable
+    tags: [stable]
+    description: "Aurora DX with dev tools (stable kernel)"
+    package_name: aurora-tuxedo-dx
+    
+  - name: aurora-dx-latest
+    base_image: ghcr.io/ublue-os/aurora-dx:latest
+    tags: [latest]
+    description: "Aurora DX with dev tools (latest kernel)"
+    package_name: aurora-tuxedo-dx
+    
+  - name: aurora-nvidia
+    base_image: ghcr.io/ublue-os/aurora-nvidia:stable
+    tags: [stable]
+    description: "Aurora with NVIDIA drivers (stable kernel)"
+    package_name: aurora-nvidia-tuxedo
+    
+  - name: aurora-nvidia-latest
+    base_image: ghcr.io/ublue-os/aurora-nvidia:latest
+    tags: [latest]
+    description: "Aurora with NVIDIA drivers (latest kernel)"
+    package_name: aurora-nvidia-tuxedo
+    
+  - name: aurora-dx-nvidia
+    base_image: ghcr.io/ublue-os/aurora-dx-nvidia:stable
+    tags: [stable]
+    description: "Aurora DX with NVIDIA drivers (stable kernel)"
+    package_name: aurora-dx-nvidia-tuxedo
+    
+  - name: aurora-dx-nvidia-latest
+    base_image: ghcr.io/ublue-os/aurora-dx-nvidia:latest
+    tags: [latest]
+    description: "Aurora DX with NVIDIA drivers (latest kernel)"
+    package_name: aurora-dx-nvidia-tuxedo
+
+  # Bluefin (GNOME) - 8 variants
+  - name: bluefin
+    base_image: ghcr.io/ublue-os/bluefin:stable
+    tags: [stable]
+    description: "Bluefin GNOME (stable kernel)"
+    package_name: bluefin-tuxedo
+    
+  - name: bluefin-latest
+    base_image: ghcr.io/ublue-os/bluefin:latest
+    tags: [latest]
+    description: "Bluefin GNOME (latest kernel)"
+    package_name: bluefin-tuxedo
+    
+  - name: bluefin-dx-stable
+    base_image: ghcr.io/ublue-os/bluefin-dx:stable
+    tags: [stable]
+    description: "Bluefin DX with dev tools (stable kernel)"
+    package_name: bluefin-tuxedo-dx
+    
+  - name: bluefin-dx-latest
+    base_image: ghcr.io/ublue-os/bluefin-dx:latest
+    tags: [latest]
+    description: "Bluefin DX with dev tools (latest kernel)"
+    package_name: bluefin-tuxedo-dx
+    
+  - name: bluefin-nvidia
+    base_image: ghcr.io/ublue-os/bluefin-nvidia:stable
+    tags: [stable]
+    description: "Bluefin with NVIDIA drivers (stable kernel)"
+    package_name: bluefin-nvidia-tuxedo
+    
+  - name: bluefin-nvidia-latest
+    base_image: ghcr.io/ublue-os/bluefin-nvidia:latest
+    tags: [latest]
+    description: "Bluefin with NVIDIA drivers (latest kernel)"
+    package_name: bluefin-nvidia-tuxedo
+    
+  - name: bluefin-dx-nvidia
+    base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:stable
+    tags: [stable]
+    description: "Bluefin DX with NVIDIA drivers (stable kernel)"
+    package_name: bluefin-dx-nvidia-tuxedo
+    
+  - name: bluefin-dx-nvidia-latest
+    base_image: ghcr.io/ublue-os/bluefin-dx-nvidia:latest
+    tags: [latest]
+    description: "Bluefin DX with NVIDIA drivers (latest kernel)"
+    package_name: bluefin-dx-nvidia-tuxedo
+
+  # Bazzite Regular (Gaming/Desktop/Deck) - 8 variants
+  - name: bazzite
+    base_image: ghcr.io/ublue-os/bazzite:stable
+    tags: [stable]
+    description: "Bazzite Gaming KDE Plasma (stable kernel)"
+    package_name: bazzite-tuxedo
+    
+  - name: bazzite-latest
+    base_image: ghcr.io/ublue-os/bazzite:latest
+    tags: [latest]
+    description: "Bazzite Gaming KDE Plasma (latest kernel)"
+    package_name: bazzite-tuxedo
+    
+  - name: bazzite-deck
+    base_image: ghcr.io/ublue-os/bazzite-deck:stable
+    tags: [stable]
+    description: "Bazzite Deck UI (stable kernel)"
+    package_name: bazzite-deck-tuxedo
+    
+  - name: bazzite-deck-latest
+    base_image: ghcr.io/ublue-os/bazzite-deck:latest
+    tags: [latest]
+    description: "Bazzite Deck UI (latest kernel)"
+    package_name: bazzite-deck-tuxedo
+    
+  - name: bazzite-gnome
+    base_image: ghcr.io/ublue-os/bazzite-gnome:stable
+    tags: [stable]
+    description: "Bazzite GNOME Desktop (stable kernel)"
+    package_name: bazzite-gnome-tuxedo
+    
+  - name: bazzite-gnome-latest
+    base_image: ghcr.io/ublue-os/bazzite-gnome:latest
+    tags: [latest]
+    description: "Bazzite GNOME Desktop (latest kernel)"
+    package_name: bazzite-gnome-tuxedo
+    
+  - name: bazzite-deck-gnome
+    base_image: ghcr.io/ublue-os/bazzite-deck-gnome:stable
+    tags: [stable]
+    description: "Bazzite Deck + GNOME (stable kernel)"
+    package_name: bazzite-deck-gnome-tuxedo
+    
+  - name: bazzite-deck-gnome-latest
+    base_image: ghcr.io/ublue-os/bazzite-deck-gnome:latest
+    tags: [latest]
+    description: "Bazzite Deck + GNOME (latest kernel)"
+    package_name: bazzite-deck-gnome-tuxedo
+
+  # Bazzite NVIDIA (Gaming/Desktop/Deck) - 12 variants
+  - name: bazzite-nvidia
+    base_image: ghcr.io/ublue-os/bazzite-nvidia:stable
+    tags: [stable]
+    description: "Bazzite Gaming + NVIDIA (stable kernel)"
+    package_name: bazzite-nvidia-tuxedo
+    
+  - name: bazzite-nvidia-latest
+    base_image: ghcr.io/ublue-os/bazzite-nvidia:latest
+    tags: [latest]
+    description: "Bazzite Gaming + NVIDIA (latest kernel)"
+    package_name: bazzite-nvidia-tuxedo
+    
+  - name: bazzite-nvidia-open
+    base_image: ghcr.io/ublue-os/bazzite-nvidia-open:stable
+    tags: [stable]
+    description: "Bazzite Gaming + Open NVIDIA (stable kernel)"
+    package_name: bazzite-nvidia-open-tuxedo
+    
+  - name: bazzite-nvidia-open-latest
+    base_image: ghcr.io/ublue-os/bazzite-nvidia-open:latest
+    tags: [latest]
+    description: "Bazzite Gaming + Open NVIDIA (latest kernel)"
+    package_name: bazzite-nvidia-open-tuxedo
+    
+  - name: bazzite-deck-nvidia
+    base_image: ghcr.io/ublue-os/bazzite-deck-nvidia:stable
+    tags: [stable]
+    description: "Bazzite Deck + NVIDIA (stable kernel)"
+    package_name: bazzite-deck-nvidia-tuxedo
+    
+  - name: bazzite-deck-nvidia-latest
+    base_image: ghcr.io/ublue-os/bazzite-deck-nvidia:latest
+    tags: [latest]
+    description: "Bazzite Deck + NVIDIA (latest kernel)"
+    package_name: bazzite-deck-nvidia-tuxedo
+    
+  - name: bazzite-gnome-nvidia
+    base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia:stable
+    tags: [stable]
+    description: "Bazzite GNOME + NVIDIA (stable kernel)"
+    package_name: bazzite-gnome-nvidia-tuxedo
+    
+  - name: bazzite-gnome-nvidia-latest
+    base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia:latest
+    tags: [latest]
+    description: "Bazzite GNOME + NVIDIA (latest kernel)"
+    package_name: bazzite-gnome-nvidia-tuxedo
+    
+  - name: bazzite-gnome-nvidia-open
+    base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable
+    tags: [stable]
+    description: "Bazzite GNOME + Open NVIDIA (stable kernel)"
+    package_name: bazzite-gnome-nvidia-open-tuxedo
+    
+  - name: bazzite-gnome-nvidia-open-latest
+    base_image: ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest
+    tags: [latest]
+    description: "Bazzite GNOME + Open NVIDIA (latest kernel)"
+    package_name: bazzite-gnome-nvidia-open-tuxedo
+    
+  - name: bazzite-deck-nvidia-gnome
+    base_image: ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable
+    tags: [stable]
+    description: "Bazzite Deck + GNOME + NVIDIA (stable kernel)"
+    package_name: bazzite-deck-nvidia-gnome-tuxedo
+    
+  - name: bazzite-deck-nvidia-gnome-latest
+    base_image: ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest
+    tags: [latest]
+    description: "Bazzite Deck + GNOME + NVIDIA (latest kernel)"
+    package_name: bazzite-deck-nvidia-gnome-tuxedo
+

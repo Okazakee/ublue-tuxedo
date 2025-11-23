@@ -1,0 +1,185 @@
+name: Build Tuxedo Images
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'containerfiles/Containerfile.template'
+      - 'scripts/**'
+      - 'overlay/**'
+      - 'config/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_build_all:
+        description: 'Force build all variants (ignores base image changes)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  NAMESPACE: okazakee
+
+jobs:
+  check-base-images:
+    name: Check Base Image Changes
+    runs-on: ubuntu-latest
+    outputs:
+      skip_all: ${{ steps.check.outputs.skip_all }}
+      variants_json: ${{ steps.check.outputs.variants_json }}
+      variants_count: ${{ steps.check.outputs.variants_count }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq wget
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+      
+      - name: Check base image changes
+        id: check
+        run: |
+          chmod +x scripts/utils/check-base-images.sh
+          # The script outputs to GITHUB_OUTPUT, capture it
+          scripts/utils/check-base-images.sh || {
+            echo "Warning: check-base-images.sh failed, will build all variants"
+            echo "skip_all=false" >> $GITHUB_OUTPUT
+            echo "variants_count=36" >> $GITHUB_OUTPUT
+          }
+          
+          # Read outputs from script
+          if [ -f .base-image-digests ]; then
+            echo "Digest file updated"
+          fi
+          
+          # Parse script output to determine variants to build
+          # The script outputs to GITHUB_OUTPUT, but we need to read it
+          if [ "${{ github.event.inputs.force_build_all }}" = "true" ]; then
+            echo "skip_all=false" >> $GITHUB_OUTPUT
+            echo "variants_count=36" >> $GITHUB_OUTPUT
+            echo "variants_json=[\"aurora\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"aurora-nvidia\",\"aurora-nvidia-latest\",\"aurora-dx-nvidia\",\"aurora-dx-nvidia-latest\",\"bluefin\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bluefin-nvidia\",\"bluefin-nvidia-latest\",\"bluefin-dx-nvidia\",\"bluefin-dx-nvidia-latest\",\"bazzite\",\"bazzite-latest\",\"bazzite-deck\",\"bazzite-deck-latest\",\"bazzite-gnome\",\"bazzite-gnome-latest\",\"bazzite-deck-gnome\",\"bazzite-deck-gnome-latest\",\"bazzite-nvidia\",\"bazzite-nvidia-latest\",\"bazzite-nvidia-open\",\"bazzite-nvidia-open-latest\",\"bazzite-deck-nvidia\",\"bazzite-deck-nvidia-latest\",\"bazzite-gnome-nvidia\",\"bazzite-gnome-nvidia-latest\",\"bazzite-gnome-nvidia-open\",\"bazzite-gnome-nvidia-open-latest\",\"bazzite-deck-nvidia-gnome\",\"bazzite-deck-nvidia-gnome-latest\"]" >> $GITHUB_OUTPUT
+          else
+            # For now, build all variants if base images changed
+            # In production, parse the actual output from check-base-images.sh
+            echo "skip_all=false" >> $GITHUB_OUTPUT
+            echo "variants_count=36" >> $GITHUB_OUTPUT
+            echo "variants_json=[\"aurora\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"aurora-nvidia\",\"aurora-nvidia-latest\",\"aurora-dx-nvidia\",\"aurora-dx-nvidia-latest\",\"bluefin\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bluefin-nvidia\",\"bluefin-nvidia-latest\",\"bluefin-dx-nvidia\",\"bluefin-dx-nvidia-latest\",\"bazzite\",\"bazzite-latest\",\"bazzite-deck\",\"bazzite-deck-latest\",\"bazzite-gnome\",\"bazzite-gnome-latest\",\"bazzite-deck-gnome\",\"bazzite-deck-gnome-latest\",\"bazzite-nvidia\",\"bazzite-nvidia-latest\",\"bazzite-nvidia-open\",\"bazzite-nvidia-open-latest\",\"bazzite-deck-nvidia\",\"bazzite-deck-nvidia-latest\",\"bazzite-gnome-nvidia\",\"bazzite-gnome-nvidia-latest\",\"bazzite-gnome-nvidia-open\",\"bazzite-gnome-nvidia-open-latest\",\"bazzite-deck-nvidia-gnome\",\"bazzite-deck-nvidia-gnome-latest\"]" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    name: Build Variants
+    needs: check-base-images
+    if: needs.check-base-images.outputs.skip_all != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # Free tier: max 20 concurrent jobs, so we batch 18 at a time
+      max-parallel: 18
+      fail-fast: false
+      matrix:
+        variant:
+          - aurora
+          - aurora-latest
+          - aurora-dx-stable
+          - aurora-dx-latest
+          - aurora-nvidia
+          - aurora-nvidia-latest
+          - aurora-dx-nvidia
+          - aurora-dx-nvidia-latest
+          - bluefin
+          - bluefin-latest
+          - bluefin-dx-stable
+          - bluefin-dx-latest
+          - bluefin-nvidia
+          - bluefin-nvidia-latest
+          - bluefin-dx-nvidia
+          - bluefin-dx-nvidia-latest
+          - bazzite
+          - bazzite-latest
+          - bazzite-deck
+          - bazzite-deck-latest
+          - bazzite-gnome
+          - bazzite-gnome-latest
+          - bazzite-deck-gnome
+          - bazzite-deck-gnome-latest
+          - bazzite-nvidia
+          - bazzite-nvidia-latest
+          - bazzite-nvidia-open
+          - bazzite-nvidia-open-latest
+          - bazzite-deck-nvidia
+          - bazzite-deck-nvidia-latest
+          - bazzite-gnome-nvidia
+          - bazzite-gnome-nvidia-latest
+          - bazzite-gnome-nvidia-open
+          - bazzite-gnome-nvidia-open-latest
+          - bazzite-deck-nvidia-gnome
+          - bazzite-deck-nvidia-gnome-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install yq for YAML parsing
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+      
+      - name: Make scripts executable
+        run: |
+          find scripts -name "*.sh" -type f -exec chmod +x {} \;
+      
+      - name: Generate Containerfiles
+        run: |
+          make generate
+      
+      - name: Extract variant metadata
+        id: variant
+        run: |
+          VARIANT="${{ matrix.variant }}"
+          CONTAINERFILE="containerfiles/generated/Containerfile.${VARIANT}"
+          
+          if [ ! -f "$CONTAINERFILE" ]; then
+            echo "Error: Containerfile not found: $CONTAINERFILE"
+            exit 1
+          fi
+          
+          BASE_IMAGE=$(grep "^FROM" "$CONTAINERFILE" | head -1 | awk '{print $2}')
+          PACKAGE_NAME=$(grep "org.opencontainers.image.title" "$CONTAINERFILE" | sed 's/.*"\(.*\)".*/\1/')
+          TAG=$(echo "$BASE_IMAGE" | sed 's/.*://' || echo "stable")
+          
+          echo "variant=$VARIANT" >> $GITHUB_OUTPUT
+          echo "base_image=$BASE_IMAGE" >> $GITHUB_OUTPUT
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "image=${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${PACKAGE_NAME}:${TAG}" >> $GITHUB_OUTPUT
+      
+      - name: Build image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: containerfiles/generated/Containerfile.${{ matrix.variant }}
+          push: true
+          tags: ${{ steps.variant.outputs.image }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Image digest
+        run: echo "Built and pushed ${{ steps.variant.outputs.image }}"
+

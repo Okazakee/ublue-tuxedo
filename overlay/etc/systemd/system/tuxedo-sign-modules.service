@@ -1,5 +1,5 @@
 [Unit]
-Description=Sign Tuxedo Modules After Kernel Update
+Description=Sign Tuxedo Kernel Modules for Secure Boot
 After=kernel-install.service
 Before=tuxedo-modules.service
 
@@ -11,3 +11,4 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
+

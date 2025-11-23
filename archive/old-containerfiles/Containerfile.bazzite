@@ -1,0 +1,70 @@
+# syntax=docker/dockerfile:1.4
+FROM ghcr.io/ublue-os/bazzite:stable
+ENV LANG=C.UTF-8
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# Minimize DNF footprint and skip multilib pulls
+RUN echo 'exclude=*.i686' >> /etc/dnf/dnf.conf &&     echo 'tsflags=nodocs' >> /etc/dnf/dnf.conf
+# Add TUXEDO official repo and setup GPG key
+RUN FEDORA_VER=$(rpm -E '%{fedora}') && \
+    printf '[tuxedo]\nname=TUXEDO\nbaseurl=https://rpm.tuxedocomputers.com/fedora/%s/x86_64/base\nenabled=1\ngpgcheck=1\ngpgkey=https://rpm.tuxedocomputers.com/fedora/%s/0x54840598.pub.asc\n' \
+    "${FEDORA_VER}" "${FEDORA_VER}" > /etc/yum.repos.d/tuxedo.repo && \
+    curl -fsSL "https://rpm.tuxedocomputers.com/fedora/${FEDORA_VER}/0x54840598.pub.asc" -o /etc/pki/rpm-gpg/0x54840598.pub.asc && \
+    rpm --import /etc/pki/rpm-gpg/0x54840598.pub.asc
+# Install TUXEDO Control Center (tuxedo-drivers installed automatically as dependency)
+# Install kernel headers first, then drivers so DKMS can build modules during installation
+RUN dnf -y upgrade --setopt=install_weak_deps=False && \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1) && \
+    dnf -y install "kernel-devel-${KVER}" || dnf -y install kernel-devel && \
+    dnf -y install kernel-headers 2>/dev/null || true && \
+    dnf -y install dkms && dnf -y install tuxedo-drivers --setopt=tsflags=noscripts && \
+    dnf -y clean all
+# Build DKMS modules for the installed kernel inside the image
+# Manually add tuxedo-drivers to DKMS since we skipped the post-install scriptlet
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
+    echo "Adding tuxedo-drivers to DKMS for kernel ${KVER}"; \
+    if [ -d "/usr/src/tuxedo-drivers" ] && [ -d "/usr/src/kernels/${KVER}" ]; then \
+        dkms add tuxedo-drivers/4.17.0 -k "${KVER}" || true; \
+        echo "Building DKMS modules for ${KVER}"; \
+        dkms autoinstall -k "${KVER}" || true; \
+        depmod -a "${KVER}" || true; \
+    else \
+        echo "Warning: DKMS sources or kernel headers not found, skipping module build"; \
+    fi
+# Add MOK certificate to kernel trust so kernel accepts modules signed with our certificate
+COPY scripts/add-mok-to-kernel-trust.sh /tmp/add-mok-to-kernel-trust.sh
+RUN chmod +x /tmp/add-mok-to-kernel-trust.sh && \
+    if [ -f "/usr/share/aurora-tuxedo/mok/MOK.der" ] || [ -f "/usr/share/aurora-tuxedo/mok/MOK.crt" ]; then \
+      /tmp/add-mok-to-kernel-trust.sh || true; \
+    fi && \
+    rm -f /tmp/add-mok-to-kernel-trust.sh
+COPY overlay/ /
+# Sign Tuxedo kernel modules with MOK key
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\\n' | tail -1); \
+    KEY="/usr/share/aurora-tuxedo/mok/MOK.key"; \
+    CRT="/usr/share/aurora-tuxedo/mok/MOK.crt"; \
+    DER="/usr/share/aurora-tuxedo/mok/MOK.der"; \
+    if [ -f "$KEY" ] && [ -f "$DER" ]; then \
+      if command -v kmodsign >/dev/null 2>&1; then \
+        find "/lib/modules/${KVER}" -type f \( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' \) -print0 | while IFS= read -r -d '' mod; do \
+          kmodsign sha256 "$KEY" "$DER" "$mod" || true; \
+        done; \
+      elif [ -x "/usr/src/kernels/${KVER}/scripts/sign-file" ]; then \
+        find "/lib/modules/${KVER}" -type f -name 'tuxedo*.ko' -print0 | while IFS= read -r -d '' mod; do \
+          "/usr/src/kernels/${KVER}/scripts/sign-file" sha256 "$KEY" "$CRT" "$mod" || true; \
+        done; \
+      fi; \
+      depmod -a "${KVER}" || true; \
+    fi
+# Copy setup script
+COPY scripts/setup-secureboot.sh /usr/bin/setup-secureboot
+COPY scripts/sign-modules.sh /usr/bin/sign-modules.sh
+COPY scripts/dkms-sign-hook.sh /tmp/dkms-sign-hook.sh
+RUN chmod +x /usr/bin/setup-secureboot /usr/bin/sign-modules.sh
+# Setup DKMS hook to auto-sign modules when rebuilt (DKMS calls scripts in post_install.d)
+RUN mkdir -p /etc/dkms/post_install.d && \
+    cp /tmp/dkms-sign-hook.sh /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    chmod +x /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    rm /tmp/dkms-sign-hook.sh
+# Enable module signing service (runs after boot if Secure Boot is enabled)

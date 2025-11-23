@@ -1,0 +1,87 @@
+# syntax=docker/dockerfile:1.4
+# Universal Blue Tuxedo Containerfile Template
+# This template is used to generate all 36 variant Containerfiles
+# Base image is specified via ARG BASE_IMAGE
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ENV LANG=C.UTF-8
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Minimize DNF footprint and skip multilib pulls
+RUN echo 'exclude=*.i686' >> /etc/dnf/dnf.conf && \
+    echo 'tsflags=nodocs' >> /etc/dnf/dnf.conf
+
+# Copy installation scripts
+COPY scripts/install/install-tuxedo-drivers.sh /tmp/install-tuxedo-drivers.sh
+COPY scripts/install/install-tcc.sh /tmp/install-tcc.sh
+
+# Install Tuxedo drivers and TCC
+RUN chmod +x /tmp/install-tuxedo-drivers.sh /tmp/install-tcc.sh && \
+    /tmp/install-tuxedo-drivers.sh && \
+    /tmp/install-tcc.sh && \
+    rm -f /tmp/install-tuxedo-drivers.sh /tmp/install-tcc.sh
+
+# Ensure modules auto-load on boot
+RUN mkdir -p /etc/modules-load.d && \
+    echo 'tuxedo_keyboard' > /etc/modules-load.d/tuxedo.conf && \
+    echo 'tuxedo_io' >> /etc/modules-load.d/tuxedo.conf
+
+# Copy overlay files (includes MOK certificates, systemd services, etc.)
+COPY overlay/ /
+
+# Add MOK certificate to kernel trust (if certificates are present)
+COPY scripts/utils/add-mok-to-kernel-trust.sh /tmp/add-mok-to-kernel-trust.sh
+RUN chmod +x /tmp/add-mok-to-kernel-trust.sh && \
+    if [ -f "/usr/share/tuxedo/mok/MOK.der" ] || [ -f "/usr/share/tuxedo/mok/MOK.crt" ]; then \
+      /tmp/add-mok-to-kernel-trust.sh || true; \
+    fi && \
+    rm -f /tmp/add-mok-to-kernel-trust.sh
+
+# Sign Tuxedo kernel modules with MOK key (if keys are present)
+RUN set -eux; \
+    KVER=$(rpm -q kernel --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -1); \
+    MOK_DIR="/usr/share/tuxedo/mok"; \
+    KEY="${MOK_DIR}/MOK.key"; \
+    CRT="${MOK_DIR}/MOK.crt"; \
+    DER="${MOK_DIR}/MOK.der"; \
+    if [ -f "$KEY" ] && [ -f "$DER" ]; then \
+      if command -v kmodsign >/dev/null 2>&1; then \
+        find "/lib/modules/${KVER}" -type f \( -name 'tuxedo*.ko' -o -name 'tuxedo*.ko.xz' \) -print0 | while IFS= read -r -d '' mod; do \
+          kmodsign sha256 "$KEY" "$DER" "$mod" || true; \
+        done; \
+      elif [ -x "/usr/src/kernels/${KVER}/scripts/sign-file" ]; then \
+        find "/lib/modules/${KVER}" -type f -name 'tuxedo*.ko' -print0 | while IFS= read -r -d '' mod; do \
+          "/usr/src/kernels/${KVER}/scripts/sign-file" sha256 "$KEY" "$CRT" "$mod" || true; \
+        done; \
+      fi; \
+      depmod -a "${KVER}" || true; \
+    fi
+
+# Copy runtime scripts
+COPY scripts/runtime/sign-modules.sh /usr/local/bin/tuxedo-sign-modules
+COPY scripts/runtime/load-modules.sh /usr/local/bin/tuxedo-load-modules
+COPY scripts/install/setup-secureboot.sh /usr/bin/setup-secureboot
+RUN chmod +x /usr/local/bin/tuxedo-sign-modules /usr/local/bin/tuxedo-load-modules /usr/bin/setup-secureboot
+
+# Setup DKMS hook to auto-sign modules when rebuilt
+COPY scripts/runtime/dkms-hook.sh /tmp/dkms-hook.sh
+RUN mkdir -p /etc/dkms/post_install.d && \
+    cp /tmp/dkms-hook.sh /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    chmod +x /etc/dkms/post_install.d/99-sign-tuxedo-modules.sh && \
+    rm -f /tmp/dkms-hook.sh
+
+# Enable systemd services
+RUN systemctl enable tuxedo-modules.service || true && \
+    systemctl enable tuxedo-sign-modules.service || true && \
+    systemctl enable sign-tuxedo-modules.service || true
+
+# Clean up
+RUN rm -rf /var/cache/dnf/* /var/tmp/*
+
+# Labels (will be customized per variant)
+LABEL org.opencontainers.image.title="tuxedo"
+LABEL org.opencontainers.image.description="Universal Blue with Tuxedo drivers and TCC"
+LABEL org.opencontainers.image.vendor="Universal Blue Tuxedo"
+

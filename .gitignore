@@ -7,7 +7,10 @@
 *.tmp
 *.temp
 *~
-*.txt
+
+# Diagnostic files
+tuxedo-secureboot-diagnostics-*.txt
+scripts/tuxedo-secureboot-diagnostics-*.txt
 
 # IDE files
 .vscode/
@@ -28,8 +31,14 @@ Thumbs.db
 build/
 dist/
 
+# Generated Containerfiles (generated from template)
+containerfiles/generated/
+
 # MOK keys and certificates (sensitive)
 mok-keys/
 
 # GitHub secrets (contains sensitive certificate data)
 GITHUB-SECRETS.md
+
+# Base image digest tracking
+.base-image-digests

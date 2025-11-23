@@ -1,0 +1,16 @@
+[Unit]
+Description=Load Tuxedo Kernel Modules
+After=kmod-static-nodes.service systemd-modules-load.service
+Before=graphical.target
+Wants=graphical.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/tuxedo-load-modules
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
