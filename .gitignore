@@ -28,7 +28,8 @@ Thumbs.db
 
 # Build cache
 .cache/
-build/
+# Only ignore root-level build/ directory, not scripts/build/
+/build/
 dist/
 
 # Generated Containerfiles (generated from template)
