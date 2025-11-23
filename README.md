@@ -94,13 +94,15 @@ Replace `[variant]:stable` with `[variant]:latest` for newest kernel:
 
 ## Features
 
+- **Fedora 43 Ready**: Optimized for latest Fedora with proper repository support
 - **Official Tuxedo Support**: Uses the official Tuxedo Fedora repository
 - **Pre-built Kernel Modules**: DKMS modules built and installed during image creation
 - **Enhanced TCC Installation**: SELinux-compatible Tuxedo Control Center with V8 memory policy fixes
-- **Secure Boot Support**: Direct MOK enrollment with secure key management
+- **Secure Boot Support**: Complete MOK enrollment workflow with automatic module signing
 - **InfinityBook Optimizations**: Proven fixes for Gen9/10 models
-- **Smart CI**: Checks all base images (Aurora, Bluefin, Bazzite) and only builds when updates are available
-- **Multi-Variant Support**: Aurora, Bluefin, and Bazzite with stable/latest variants
+- **Template-Based Architecture**: Single template generates all 36 variants (zero code duplication)
+- **Smart CI/CD**: Checks base images and only builds when updates are available (free tier optimized)
+- **Automatic Module Management**: DKMS hooks and systemd services handle kernel updates automatically
 
 ### Add Recommended Kernel Arguments
 
@@ -114,18 +116,25 @@ sudo rpm-ostree kargs --append-if-missing acpi.ec_no_wakeup=1
 
 ## Secure Boot Setup
 
-The `setup-secureboot` script automatically handles Secure Boot setup with two fallback paths:
+The `setup-secureboot` script handles Secure Boot setup with secure password-based MOK enrollment:
 
 ```bash
-sudo /usr/bin/setup-secureboot
+sudo setup-secureboot
 ```
 
 The script will:
 
-1. **First**: Attempt to use Aurora keys (if available and trusted)
-2. **Simplified Approach**: Direct MOK enrollment only
+1. Check if Secure Boot is enabled
+2. Prompt for a MOK enrollment password (secure, no hardcoded passwords)
+3. Import the MOK certificate into firmware
+4. Provide reboot instructions
 
-MOK certificates are embedded in all images for secure module signing.
+**After reboot:**
+- You'll see a MOK enrollment screen
+- Select "Enroll MOK" and enter your password
+- Complete the enrollment
+
+MOK certificates are embedded in all images (from GitHub Secrets) for secure module signing.
 
 ### Automatic Kernel Update Handling
 
@@ -133,15 +142,17 @@ MOK certificates are embedded in all images for secure module signing.
 
 1. **DKMS Hook**: Automatically rebuilds and signs Tuxedo modules when a new kernel is installed
 2. **Module Loading Service**: Automatically copies signed modules from DKMS to a writable location and loads them
-3. **Kernel Install Trigger**: The `load-tuxedo-modules.service` runs after `kernel-install.service` to ensure modules are ready for the new kernel
+3. **Kernel Install Trigger**: The `tuxedo-modules.service` runs after kernel installation to ensure modules are ready
 
 **What happens automatically:**
 - After a kernel update, DKMS rebuilds modules for the new kernel
-- Modules are automatically signed with your MOK certificate
+- Modules are automatically signed with your MOK certificate (via DKMS hook)
 - Modules are copied to `/usr/local/lib/modules/$(uname -r)/extra/` (writable location)
 - Modules are automatically loaded on next boot
 
 **You only need to reboot** - everything else is handled automatically!
+
+📖 **For detailed Secure Boot documentation, see [docs/SECUREBOOT.md](docs/SECUREBOOT.md)**
 
 ## Verification
 
@@ -160,6 +171,9 @@ tuxedo-control-center
 
 # Check TCC service status (should be running)
 systemctl status tccd.service
+
+# Check module loading service
+systemctl status tuxedo-modules.service
 ```
 
 ## Troubleshooting
@@ -170,19 +184,18 @@ systemctl status tccd.service
 1. Check if modules are present:
 
    ```bash
-   ls -la /lib/modules/$(uname -r)/updates/ | grep tuxedo
+   ls -la /usr/local/lib/modules/$(uname -r)/extra/ | grep tuxedo
    ```
 
 2. Manually load modules:
 
    ```bash
-   sudo modprobe tuxedo_keyboard
-   sudo modprobe tuxedo_io
+   sudo /usr/local/bin/tuxedo-load-modules
    ```
 
 3. Check system logs:
    ```bash
-   journalctl -b -u tuxedo-control-center
+   journalctl -b -u tuxedo-modules.service
    dmesg | grep tuxedo
    ```
 
@@ -200,13 +213,20 @@ systemctl status tccd.service
 2. If modules fail to load with Secure Boot enabled:
 
    ```bash
-   sudo /usr/bin/setup-secureboot
+   sudo setup-secureboot
    ```
 
 3. Verify MOK enrollment:
    ```bash
-   mokutil --list-enrolled
+   mokutil --list-enrolled | grep -i tuxedo
    ```
+
+4. Manually sign modules if needed:
+   ```bash
+   sudo /usr/local/bin/tuxedo-sign-modules
+   ```
+
+📖 **For complete Secure Boot troubleshooting, see [docs/SECUREBOOT.md](docs/SECUREBOOT.md)**
 
 </details>
 
@@ -218,13 +238,12 @@ The image includes a systemd-sleep hook that reinitializes Tuxedo modules on res
 1. Check if the hook is present:
 
    ```bash
-   ls -la /usr/lib/systemd/system-sleep/tuxedo-keyboard
+   ls -la /usr/lib/systemd/system-sleep/tuxedo-resume.sh
    ```
 
 2. Test manual module reload:
    ```bash
-   sudo modprobe -r tuxedo_keyboard tuxedo_io
-   sudo modprobe tuxedo_keyboard tuxedo_io
+   sudo /usr/local/bin/tuxedo-load-modules
    ```
 
 </details>
@@ -254,12 +273,6 @@ The TCC daemon (`tccd.service`) includes SELinux fixes for V8 JavaScript runtime
    ls -Z /opt/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd
    ```
 
-4. Manual service start for testing:
-
-   ```bash
-   sudo /opt/tuxedo-control-center/resources/dist/tuxedo-control-center/data/service/tccd --start
-   ```
-
 **Note**: This image includes targeted SELinux policies that resolve the V8 memory permission issues causing TCC crashes.
 
 </details>
@@ -277,106 +290,137 @@ sudo rpm-ostree rollback
 
 ## Building from Source
 
-<details>
-<summary><h3 style="display: inline;">🔨 Build Instructions</h3></summary>
-
 ### Prerequisites
 
 - Docker or Podman
+- Make
+- yq (for YAML parsing) - `dnf install yq` or `pip install yq`
 - Git
 
-### Build Steps
+### Quick Build
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/okazakee/aurora-tuxedo.git
-   cd aurora-tuxedo
+   git clone https://github.com/okazakee/ublue-tuxedo.git
+   cd ublue-tuxedo
    ```
 
-2. Build a specific variant:
+2. Generate Containerfiles from template:
+
+   ```bash
+   make generate
+   ```
+
+3. Build a specific variant:
 
    ```bash
    # Build Aurora stable
-   docker build -f containerfiles/Containerfile.aurora -t aurora-tuxedo:stable .
+   make build VARIANT=aurora
 
-   # Or build any other variant
-   docker build -f containerfiles/Containerfile.bazzite-nvidia -t bazzite-nvidia-tuxedo:stable .
+   # Build Aurora DX stable
+   make build VARIANT=aurora-dx-stable
+
+   # Build any variant (see config/variants.yaml for all names)
+   make build VARIANT=bazzite-nvidia
    ```
 
-3. Test the image:
+4. Build all variants (takes time):
+
    ```bash
-   docker run --rm aurora-tuxedo:stable bash -c "rpm -qa | grep tuxedo"
+   make build-all
    ```
 
-</details>
+### Build System
 
-### Build Process Improvements (PR Pattern)
+The repository uses a **template-based build system**:
 
-The build process now includes the proven patterns from [BrickMan240's PR #6](https://github.com/BrickMan240/ublue-tuxedo-tcc/pull/6):
+- **Single Template**: `containerfiles/Containerfile.template` generates all 36 variants
+- **Variant Configuration**: `config/variants.yaml` defines all variants
+- **Automatic Generation**: `make generate` creates all Containerfiles
+- **Zero Duplication**: One template, 36 generated files
 
-- **Writable Build Location**: Copies DKMS sources to `/tmp/tuxedo-drivers-build` to avoid immutable filesystem issues
-- **Explicit Module Installation**: Uses `make modules_install` to ensure modules are properly placed
-- **Secure Key Management**: MOK keys stored securely in GitHub Secrets and embedded during build
-- **Automated Setup**: One-time MOK enrollment with persistent module signing across updates
+### Available Make Targets
+
+```bash
+make generate    # Generate all Containerfiles from template
+make build VARIANT=aurora  # Build specific variant
+make build-all   # Build all 36 variants (takes time)
+make validate    # Validate configuration and generated files
+make test        # Run validation tests
+make clean       # Clean generated Containerfiles
+```
+
+📖 **For detailed build documentation, see [docs/BUILDING.md](docs/BUILDING.md) (if exists) or [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+
+## Architecture
+
+This repository uses a **modern template-based architecture**:
+
+- **Single Source of Truth**: One `Containerfile.template` generates all 36 variants
+- **Modular Scripts**: Organized by function (install, runtime, utils)
+- **Automatic CI/CD**: GitHub Actions builds only changed variants
+- **Free Tier Optimized**: Respects GitHub Actions limits (max 18 concurrent jobs)
+
+### Key Components
+
+- **Template System**: `containerfiles/Containerfile.template` + `config/variants.yaml`
+- **Installation Scripts**: Driver installation, TCC setup, Secure Boot configuration
+- **Runtime Scripts**: Module loading, signing, DKMS hooks
+- **Systemd Services**: Automatic module management on boot and kernel updates
+- **Overlay Files**: System configuration, services, SELinux policies
+
+📖 **For complete architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 ## CI/CD
 
 The repository includes GitHub Actions workflows that:
 
-- Check if Aurora base image has changed
-- Build and push the image to GHCR
-- Test the built image
-- Update the Aurora digest file
+- **Smart Building**: Checks base image digests and only builds changed variants
+- **Free Tier Optimized**: Batches builds (max 18 concurrent) to respect limits
+- **Automatic Publishing**: Builds and pushes images to GHCR
+- **MOK Key Integration**: Embeds MOK certificates from GitHub Secrets for module signing
 
-### Required Secrets
+### Required GitHub Secrets
 
-- `GHCR_PAT`: Personal Access Token with `write:packages` permission
+For Secure Boot module signing, add these secrets:
 
-## Architecture
+- `MOK_PRIVATE_KEY` - MOK private key (PEM format)
+- `MOK_CERTIFICATE_PEM` - MOK certificate (PEM format)
+- `MOK_CERTIFICATE_DER` - MOK certificate (DER format, base64 encoded)
 
-### Containerfile Structure
-
-Each variant uses a different base image:
-
-1. **Stable**: `ghcr.io/ublue-os/aurora:stable` - Weekly updates with gated kernel
-2. **Latest**: `ghcr.io/ublue-os/aurora:latest` - Newest features with latest kernel
-3. **DX**: `ghcr.io/ublue-os/aurora-dx:latest` - Developer Experience with pre-installed tools
-
-Common build process for all variants:
-
-1. **Repository Setup**: Official Tuxedo Fedora repository
-2. **Package Installation**: TCC, drivers, DKMS, build dependencies
-3. **Enhanced TCC Installation**: SELinux-compatible installation with V8 memory policies
-4. **Module Building**: DKMS autoinstall with proper module placement
-5. **System Integration**: modules-load.d and systemd-sleep hooks
-6. **Overlay Files**: Additional configuration files
-
-### Key Components
-
-- **Tuxedo Control Center**: GUI for fan control, brightness, keyboard backlight
-- **Enhanced TCC Installation**: Script with comprehensive SELinux policies for V8 JavaScript runtime
-- **Tuxedo Drivers**: Kernel modules for hardware control
-- **DKMS**: Dynamic Kernel Module Support for automatic rebuilding
-- **Secure Boot**: Module signing with MOK enrollment (simplified)
+📖 **For CI/CD details, see [docs/GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md)**
 
 ## Contributing
 
+We welcome contributions! The repository uses a template-based system for easy maintenance.
+
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
-4. Test on real hardware if possible
+3. Make your changes (edit the template, not generated files)
+4. Test with `make build VARIANT=aurora`
 5. Submit a pull request
+
+📖 **For contribution guidelines, see [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)**
+
+## Documentation
+
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Complete system architecture
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - How to contribute
+- **[SECUREBOOT.md](docs/SECUREBOOT.md)** - Secure Boot setup and troubleshooting
+- **[GITHUB_ACTIONS.md](docs/GITHUB_ACTIONS.md)** - CI/CD workflow details
+- **[VARIANTS.md](docs/VARIANTS.md)** - Complete variant listing
 
 ## License
 
-This project follows the same license as the Aurora base image.
+This project follows the same license as the Universal Blue base images.
 
 ## Support
 
 - **Tuxedo Support**: [Tuxedo Computers Support](https://www.tuxedocomputers.com/en/Support.1.html)
-- **Aurora Support**: [Aurora Documentation](https://aurora.blue/)
-- **Issues**: [GitHub Issues](https://github.com/okazakee/aurora-tuxedo/issues)
+- **Universal Blue**: [Universal Blue Documentation](https://universal-blue.org/)
+- **Aurora**: [Aurora Documentation](https://aurora.blue/)
+- **Issues**: [GitHub Issues](https://github.com/okazakee/ublue-tuxedo/issues)
 
 ## Acknowledgments
 

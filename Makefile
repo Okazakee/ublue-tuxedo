@@ -39,7 +39,8 @@ help:
 
 generate:
 	@echo "Generating Containerfiles from template..."
-	@$(SCRIPTS_DIR)/build/generate-containerfiles.sh
+	@chmod +x $(SCRIPTS_DIR)/build/generate-containerfiles.sh
+	@bash $(SCRIPTS_DIR)/build/generate-containerfiles.sh
 	@echo "Done. Generated files are in $(GENERATED_DIR)"
 
 build: validate
@@ -77,7 +78,8 @@ build-all: generate
 
 test:
 	@echo "Running validation tests..."
-	@$(SCRIPTS_DIR)/utils/validate-build.sh || echo "Validation script not found, skipping"
+	@chmod +x $(SCRIPTS_DIR)/utils/validate-build.sh 2>/dev/null || true
+	@bash $(SCRIPTS_DIR)/utils/validate-build.sh || echo "Validation script not found, skipping"
 
 validate: generate
 	@echo "Validating configuration..."

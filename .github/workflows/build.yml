@@ -166,15 +166,37 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
           yq --version
       
+      - name: Verify repository structure
+        if: steps.should_build.outputs.should_build == 'true'
+        run: |
+          echo "Checking repository structure..."
+          ls -la scripts/build/ || echo "scripts/build/ directory missing"
+          ls -la config/ || echo "config/ directory missing"
+          ls -la containerfiles/ || echo "containerfiles/ directory missing"
+      
       - name: Make scripts executable
         if: steps.should_build.outputs.should_build == 'true'
         run: |
           find scripts -name "*.sh" -type f -exec chmod +x {} \;
+          # Verify critical scripts exist
+          if [ ! -f scripts/build/generate-containerfiles.sh ]; then
+            echo "Error: generate-containerfiles.sh not found"
+            find scripts -type f -name "*.sh" | head -10
+            exit 1
+          fi
+          chmod +x scripts/build/generate-containerfiles.sh
+          echo "Script permissions:"
+          ls -la scripts/build/generate-containerfiles.sh
       
       - name: Generate Containerfiles
         if: steps.should_build.outputs.should_build == 'true'
         run: |
-          make generate
+          # Ensure script is executable and run directly if make fails
+          chmod +x scripts/build/generate-containerfiles.sh
+          bash scripts/build/generate-containerfiles.sh || {
+            echo "Direct script execution failed, trying with make..."
+            make generate
+          }
       
       - name: Extract variant metadata
         if: steps.should_build.outputs.should_build == 'true'
