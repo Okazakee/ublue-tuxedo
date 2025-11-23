@@ -151,9 +151,10 @@ update_digest_file() {
 
 map_image_to_variants() {
     local image="$1"
+    # Map base images to variant names (matching variants.yaml)
     case "$image" in
         "ghcr.io/ublue-os/aurora:stable")
-            echo "aurora-stable"
+            echo "aurora"
             ;;
         "ghcr.io/ublue-os/aurora:latest")
             echo "aurora-latest"
@@ -165,19 +166,19 @@ map_image_to_variants() {
             echo "aurora-dx-latest"
             ;;
         "ghcr.io/ublue-os/aurora-nvidia:stable")
-            echo "aurora-nvidia-stable"
+            echo "aurora-nvidia"
             ;;
         "ghcr.io/ublue-os/aurora-nvidia:latest")
             echo "aurora-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/aurora-dx-nvidia:stable")
-            echo "aurora-dx-nvidia-stable"
+            echo "aurora-dx-nvidia"
             ;;
         "ghcr.io/ublue-os/aurora-dx-nvidia:latest")
             echo "aurora-dx-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bluefin:stable")
-            echo "bluefin-stable"
+            echo "bluefin"
             ;;
         "ghcr.io/ublue-os/bluefin:latest")
             echo "bluefin-latest"
@@ -189,73 +190,73 @@ map_image_to_variants() {
             echo "bluefin-dx-latest"
             ;;
         "ghcr.io/ublue-os/bluefin-nvidia:stable")
-            echo "bluefin-nvidia-stable"
+            echo "bluefin-nvidia"
             ;;
         "ghcr.io/ublue-os/bluefin-nvidia:latest")
             echo "bluefin-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bluefin-dx-nvidia:stable")
-            echo "bluefin-dx-nvidia-stable"
+            echo "bluefin-dx-nvidia"
             ;;
         "ghcr.io/ublue-os/bluefin-dx-nvidia:latest")
             echo "bluefin-dx-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bazzite:stable")
-            echo "bazzite-stable"
+            echo "bazzite"
             ;;
         "ghcr.io/ublue-os/bazzite:latest")
             echo "bazzite-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-nvidia:stable")
-            echo "bazzite-nvidia-stable"
+            echo "bazzite-nvidia"
             ;;
         "ghcr.io/ublue-os/bazzite-nvidia:latest")
             echo "bazzite-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-deck:stable")
-            echo "bazzite-deck-stable"
+            echo "bazzite-deck"
             ;;
         "ghcr.io/ublue-os/bazzite-deck:latest")
             echo "bazzite-deck-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-nvidia-open:stable")
-            echo "bazzite-nvidia-open-stable"
+            echo "bazzite-nvidia-open"
             ;;
         "ghcr.io/ublue-os/bazzite-nvidia-open:latest")
             echo "bazzite-nvidia-open-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-nvidia:stable")
-            echo "bazzite-deck-nvidia-stable"
+            echo "bazzite-deck-nvidia"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-nvidia:latest")
             echo "bazzite-deck-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome:stable")
-            echo "bazzite-gnome-stable"
+            echo "bazzite-gnome"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome:latest")
             echo "bazzite-gnome-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome-nvidia:stable")
-            echo "bazzite-gnome-nvidia-stable"
+            echo "bazzite-gnome-nvidia"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome-nvidia:latest")
             echo "bazzite-gnome-nvidia-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable")
-            echo "bazzite-gnome-nvidia-open-stable"
+            echo "bazzite-gnome-nvidia-open"
             ;;
         "ghcr.io/ublue-os/bazzite-gnome-nvidia-open:latest")
             echo "bazzite-gnome-nvidia-open-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-gnome:stable")
-            echo "bazzite-deck-gnome-stable"
+            echo "bazzite-deck-gnome"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-gnome:latest")
             echo "bazzite-deck-gnome-latest"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:stable")
-            echo "bazzite-deck-nvidia-gnome-stable"
+            echo "bazzite-deck-nvidia-gnome"
             ;;
         "ghcr.io/ublue-os/bazzite-deck-nvidia-gnome:latest")
             echo "bazzite-deck-nvidia-gnome-latest"
@@ -302,12 +303,14 @@ main() {
         log_success "No base images changed - skipping all builds"
         echo "skip_all=true" >> "$GITHUB_OUTPUT"
         echo "variants_to_build=[]" >> "$GITHUB_OUTPUT"
+        echo "variants_count=0" >> "$GITHUB_OUTPUT"
     else
         log_success "Found ${#changed_variants[@]} variant(s) to build"
         local variants_json="[$(IFS=,; echo "${changed_variants[*]}")]"
         log_info "Variants to build: $variants_json"
         echo "skip_all=false" >> "$GITHUB_OUTPUT"
         echo "variants_to_build=$variants_json" >> "$GITHUB_OUTPUT"
+        echo "variants_count=${#changed_variants[@]}" >> "$GITHUB_OUTPUT"
     fi
 }
 

@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       skip_all: ${{ steps.check.outputs.skip_all }}
-      variants_json: ${{ steps.check.outputs.variants_json }}
+      variants_to_build: ${{ steps.check.outputs.variants_to_build }}
       variants_count: ${{ steps.check.outputs.variants_count }}
     steps:
       - uses: actions/checkout@v4
@@ -46,34 +46,29 @@ jobs:
         id: check
         run: |
           chmod +x scripts/utils/check-base-images.sh
-          # The script outputs to GITHUB_OUTPUT, capture it
-          scripts/utils/check-base-images.sh || {
-            echo "Warning: check-base-images.sh failed, will build all variants"
-            echo "skip_all=false" >> $GITHUB_OUTPUT
-            echo "variants_count=36" >> $GITHUB_OUTPUT
-          }
           
-          # Read outputs from script
-          if [ -f .base-image-digests ]; then
-            echo "Digest file updated"
-          fi
-          
-          # Parse script output to determine variants to build
-          # The script outputs to GITHUB_OUTPUT, but we need to read it
+          # Force build all if requested
           if [ "${{ github.event.inputs.force_build_all }}" = "true" ]; then
+            echo "Force building all variants"
             echo "skip_all=false" >> $GITHUB_OUTPUT
             echo "variants_count=36" >> $GITHUB_OUTPUT
-            echo "variants_json=[\"aurora\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"aurora-nvidia\",\"aurora-nvidia-latest\",\"aurora-dx-nvidia\",\"aurora-dx-nvidia-latest\",\"bluefin\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bluefin-nvidia\",\"bluefin-nvidia-latest\",\"bluefin-dx-nvidia\",\"bluefin-dx-nvidia-latest\",\"bazzite\",\"bazzite-latest\",\"bazzite-deck\",\"bazzite-deck-latest\",\"bazzite-gnome\",\"bazzite-gnome-latest\",\"bazzite-deck-gnome\",\"bazzite-deck-gnome-latest\",\"bazzite-nvidia\",\"bazzite-nvidia-latest\",\"bazzite-nvidia-open\",\"bazzite-nvidia-open-latest\",\"bazzite-deck-nvidia\",\"bazzite-deck-nvidia-latest\",\"bazzite-gnome-nvidia\",\"bazzite-gnome-nvidia-latest\",\"bazzite-gnome-nvidia-open\",\"bazzite-gnome-nvidia-open-latest\",\"bazzite-deck-nvidia-gnome\",\"bazzite-deck-nvidia-gnome-latest\"]" >> $GITHUB_OUTPUT
+            echo "variants_to_build=[]" >> $GITHUB_OUTPUT
           else
-            # For now, build all variants if base images changed
-            # In production, parse the actual output from check-base-images.sh
-            echo "skip_all=false" >> $GITHUB_OUTPUT
-            echo "variants_count=36" >> $GITHUB_OUTPUT
-            echo "variants_json=[\"aurora\",\"aurora-latest\",\"aurora-dx-stable\",\"aurora-dx-latest\",\"aurora-nvidia\",\"aurora-nvidia-latest\",\"aurora-dx-nvidia\",\"aurora-dx-nvidia-latest\",\"bluefin\",\"bluefin-latest\",\"bluefin-dx-stable\",\"bluefin-dx-latest\",\"bluefin-nvidia\",\"bluefin-nvidia-latest\",\"bluefin-dx-nvidia\",\"bluefin-dx-nvidia-latest\",\"bazzite\",\"bazzite-latest\",\"bazzite-deck\",\"bazzite-deck-latest\",\"bazzite-gnome\",\"bazzite-gnome-latest\",\"bazzite-deck-gnome\",\"bazzite-deck-gnome-latest\",\"bazzite-nvidia\",\"bazzite-nvidia-latest\",\"bazzite-nvidia-open\",\"bazzite-nvidia-open-latest\",\"bazzite-deck-nvidia\",\"bazzite-deck-nvidia-latest\",\"bazzite-gnome-nvidia\",\"bazzite-gnome-nvidia-latest\",\"bazzite-gnome-nvidia-open\",\"bazzite-gnome-nvidia-open-latest\",\"bazzite-deck-nvidia-gnome\",\"bazzite-deck-nvidia-gnome-latest\"]" >> $GITHUB_OUTPUT
+            # Run check script - it outputs to GITHUB_OUTPUT
+            scripts/utils/check-base-images.sh
+            
+            # Read the outputs (they're already in GITHUB_OUTPUT from the script)
+            # The script sets: skip_all, variants_to_build, variants_count
           fi
+      
+      - name: Show results
+        run: |
+          echo "Skip all: ${{ steps.check.outputs.skip_all }}"
+          echo "Variants to build: ${{ steps.check.outputs.variants_to_build }}"
+          echo "Variants count: ${{ steps.check.outputs.variants_count }}"
 
   build:
-    name: Build Variants
+    name: Build ${{ matrix.variant }}
     needs: check-base-images
     if: needs.check-base-images.outputs.skip_all != 'true'
     runs-on: ubuntu-latest
@@ -125,10 +120,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check if variant should be built
+        id: should_build
+        run: |
+          VARIANT="${{ matrix.variant }}"
+          FORCE_BUILD="${{ github.event.inputs.force_build_all }}"
+          VARIANTS_TO_BUILD='${{ needs.check-base-images.outputs.variants_to_build }}'
+          
+          # Always build if force_build_all is true
+          if [ "$FORCE_BUILD" = "true" ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # If variants_to_build is empty, build all (first run or all changed)
+          if [ -z "$VARIANTS_TO_BUILD" ] || [ "$VARIANTS_TO_BUILD" = "[]" ]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if this variant is in the list
+          if echo "$VARIANTS_TO_BUILD" | grep -q "\"$VARIANT\""; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "Skipping $VARIANT - base image unchanged"
+          fi
+      
       - name: Set up Docker Buildx
+        if: steps.should_build.outputs.should_build == 'true'
         uses: docker/setup-buildx-action@v3
       
       - name: Log in to GitHub Container Registry
+        if: steps.should_build.outputs.should_build == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -136,20 +160,24 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Install yq for YAML parsing
+        if: steps.should_build.outputs.should_build == 'true'
         run: |
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           yq --version
       
       - name: Make scripts executable
+        if: steps.should_build.outputs.should_build == 'true'
         run: |
           find scripts -name "*.sh" -type f -exec chmod +x {} \;
       
       - name: Generate Containerfiles
+        if: steps.should_build.outputs.should_build == 'true'
         run: |
           make generate
       
       - name: Extract variant metadata
+        if: steps.should_build.outputs.should_build == 'true'
         id: variant
         run: |
           VARIANT="${{ matrix.variant }}"
@@ -170,7 +198,40 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "image=${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${PACKAGE_NAME}:${TAG}" >> $GITHUB_OUTPUT
       
+      - name: Prepare MOK keys
+        if: steps.should_build.outputs.should_build == 'true'
+        run: |
+          mkdir -p overlay/usr/share/tuxedo/mok
+          
+          # Copy MOK keys from secrets if available
+          # Note: MOK keys are embedded in overlay during build for module signing
+          if [ -n "${{ secrets.MOK_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.MOK_PRIVATE_KEY }}" > overlay/usr/share/tuxedo/mok/MOK.key
+            chmod 600 overlay/usr/share/tuxedo/mok/MOK.key
+          fi
+          
+          if [ -n "${{ secrets.MOK_CERTIFICATE_PEM }}" ]; then
+            echo "${{ secrets.MOK_CERTIFICATE_PEM }}" > overlay/usr/share/tuxedo/mok/MOK.crt
+          fi
+          
+          if [ -n "${{ secrets.MOK_CERTIFICATE_DER }}" ]; then
+            # Try base64 decode first (if encoded), otherwise use as-is
+            echo "${{ secrets.MOK_CERTIFICATE_DER }}" | base64 -d > overlay/usr/share/tuxedo/mok/MOK.der 2>/dev/null || \
+            echo "${{ secrets.MOK_CERTIFICATE_DER }}" > overlay/usr/share/tuxedo/mok/MOK.der
+          fi
+          
+          # Verify keys were created
+          if [ -f overlay/usr/share/tuxedo/mok/MOK.key ] && [ -f overlay/usr/share/tuxedo/mok/MOK.der ]; then
+            echo "✓ MOK keys prepared successfully"
+            ls -lh overlay/usr/share/tuxedo/mok/ | grep -v "^total"
+          else
+            echo "⚠ Warning: MOK keys not found in secrets"
+            echo "Modules will not be signed during build"
+            echo "Users can sign modules manually or use setup-secureboot.sh with their own certificate"
+          fi
+      
       - name: Build image
+        if: steps.should_build.outputs.should_build == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -181,5 +242,9 @@ jobs:
           cache-to: type=gha,mode=max
       
       - name: Image digest
+        if: steps.should_build.outputs.should_build == 'true'
         run: echo "Built and pushed ${{ steps.variant.outputs.image }}"
-
+      
+      - name: Skip message
+        if: steps.should_build.outputs.should_build != 'true'
+        run: echo "Skipped ${{ matrix.variant }} - base image unchanged"
